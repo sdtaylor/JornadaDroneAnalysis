@@ -13,7 +13,7 @@ boundaries = sf::st_read('data/gis/site_boundaries.geojson')
 source('roi_config.R')
 source('spatial_helper_functions.R')
 
-for(site in c('P9', 'GIBPE', 'NORT')){
+for(site in jorn_sites){
   b = boundaries %>%
     filter(site_id == site)
 

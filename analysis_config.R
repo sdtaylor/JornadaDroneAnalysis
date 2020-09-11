@@ -1,5 +1,13 @@
 
+# ---------------
+# Primary stuff
+# ---------------
 
+jorn_sites = c('P9', 'GIBPE', 'NORT')
+
+# ---------------
+# Site ROI info
+# ---------------
 
 # These are the larger ROIs
 primary_roi_info = tribble(
