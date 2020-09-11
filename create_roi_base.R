@@ -27,7 +27,7 @@ for(site in jorn_sites){
                                    scale = roi_info$scale[i])
 
     cell_features = st_sf(scale = roi_info$scale[i], 
-                          site  = site,
+                          site_id = site,
                           plant = roi_info$plant[i],
                           geom  = cell_geoms,
                           crs   = st_crs(boundaries),
