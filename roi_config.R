@@ -1,0 +1,45 @@
+
+
+
+# These are the larger ROIs
+primary_roi_info = tribble(
+  ~site_id, ~plant,        ~scale, ~n_cells,
+  'NORT',   'mesquite',     4,      40,
+  'NORT',   'none',         30,     10,
+
+  'P9',     'grass',        4,      40,
+  'P9',     'mesquite',     2,      50,
+  'P9',     'none',         30,     10,
+  
+  'GIBPE',     'grass',        4,      40,
+  'GIBPE',     'mesquite',     2,      50,
+  'GIBPE',     'none',         30,     10,
+)
+
+# These are plant specific scales which will be randomly
+# placed within the larger plant scales described above. 
+# eg. Each 4m grass cell in GIBPE described above will get 4 randomly placed 1m cells within it.
+subset_roi_info = tribble(
+  ~site_id, ~plant,           ~scale, ~n_subcells,
+  'NORT',   'mesquite',     0.5,    8,
+  'NORT',   'mesquite',     1,      4,
+  'NORT',   'mesquite',     2,      3,
+  'NORT',     'none',         8,      8,
+  'NORT',     'none',         16,     3,
+  
+  'P9',     'grass',        0.5,    8,
+  'P9',     'grass',        1,      4,
+  'P9',     'grass',        2,      3,
+  'P9',     'mesquite',     0.5,    8,
+  'P9',     'mesquite',     1,      4,
+  'P9',     'none',         8,      8,
+  'P9',     'none',         16,     3,
+  
+  'GIBPE',     'grass',        0.5,     8,
+  'GIBPE',     'grass',        1,       4,
+  'GIBPE',     'grass',        2,       3,
+  'GIBPE',     'mesquite',     0.5,    8,
+  'GIBPE',     'mesquite',     1,      4,
+  'GIBPE',     'none',         8,      8,
+  'GIBPE',     'none',         16,     3
+)
