@@ -42,7 +42,7 @@ polygon_sample = function(p, n, new_polygon_scale){
   random_points = st_sample(search_space, size=n)
   subcell_geoms = points_to_squares(random_points,
                                    scale = new_polygon_scale)
-  subcell_features = st_sf(geom  = subcell_geoms,
+  subcell_features = st_sf(geometry  = subcell_geoms,
                            crs   = st_crs(p),
                            precision = 1000)
   
