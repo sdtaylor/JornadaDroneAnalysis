@@ -1,6 +1,13 @@
 library(tidyverse)
 library(sf)
 
+# ---------------------
+# This script takes the primary hand placed ROIs and randomly
+# places smaller ROI's within all of them.
+# eg, I had place a 4m ROI over a grassy area. Here numerous ROIs
+# at 4,2, and 0.5m (defined in analysis_config.R) are placed within that grassy area. 
+# ---------------------
+
 source('spatial_helper_functions.R')
 source('analysis_config.R')
 

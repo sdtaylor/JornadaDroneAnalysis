@@ -1,11 +1,11 @@
 library(tidyverse)
 library(sf)
 
-#######################
+# ---------------------
 # This script randomly locates the appropriate sized cells at each site.
 # These are not the ROIs used in the analysis, but are used as a template
 # to hand place everything on the correct plants using qgis.
-#######################
+# ---------------------
 
 
 ####################################

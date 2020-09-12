@@ -24,9 +24,11 @@ primary_roi_info = tribble(
   'GIBPE',     'none',         30,     10,
 )
 
+# ---------------------
 # These are plant specific scales which will be randomly
 # placed within the larger plant scales described above. 
 # eg. Each 4m grass cell in GIBPE described above will get 4 randomly placed 1m cells within it.
+# ---------------------
 subset_roi_info = tribble(
   ~site_id, ~plant,           ~scale, ~n_subcells,
   'NORT',   'mesquite',     0.5,    8,
