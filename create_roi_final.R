@@ -31,6 +31,7 @@ for(i in 1:nrow(primary_rois)){
     x$site_id = p$site_id
     x$plant   = p$plant
     x$roi_id  = paste(p$roi_id, subset_rois$scale[i2] , 1:nrow(x), sep = '-')
+    x$primary_roi_id = p$roi_id
     
     if(exists('new_subset_rois')){
       new_subset_rois = bind_rows(new_subset_rois, x)
@@ -39,6 +40,9 @@ for(i in 1:nrow(primary_rois)){
     }
   }
 }
+
+primary_rois$roi_type = 'primary'
+new_subset_rois$roi_type = 'subset'
 
 final_roi = bind_rows(primary_rois, new_subset_rois)
 st_write(final_roi, dsn = 'data/gis/site_rois_3_final', driver='GeoJSON')
