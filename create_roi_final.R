@@ -45,5 +45,5 @@ primary_rois$roi_type = 'primary'
 new_subset_rois$roi_type = 'subset'
 
 final_roi = bind_rows(primary_rois, new_subset_rois)
-st_write(final_roi, dsn = 'data/gis/site_rois_3_final', driver='GeoJSON')
+st_write(final_roi, dsn = 'data/gis/site_rois_3_final.geojson', driver='GeoJSON')
 
