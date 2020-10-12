@@ -7,6 +7,7 @@ jorn_sites = c('P9', 'GIBPE', 'NORT')
 
 final_roi_file = 'data/gis/site_rois_3_final.geojson'
 roi_ndvi_file = 'data/roi_ndvi.csv'
+roi_ortho_file = 'data/roi_ortho.csv'
 
 # ---------------
 # Site ROI info
