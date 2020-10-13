@@ -18,8 +18,26 @@ for(site in jorn_sites){
   site_image_list = raster_list[grep(site, raster_list)]
 
   for(f in site_image_list){
-    for(band_i in 1:5){
-      r = raster::raster(f, band=band_i)
+    
+    for(band_i in 1:6){
+      band_color = case_when(
+        band_i == 1 ~ 'red',
+        band_i == 2 ~ 'green',
+        band_i == 3 ~ 'blue',
+        band_i == 4 ~ 'nir',
+        band_i == 5 ~ 'rededge',
+        band_i == 6 ~ 'ndvi',
+        
+      )
+      
+      if(band_color=='ndvi'){
+        nir = raster::raster(f, band=4)
+        red = raster::raster(f, band=1)
+        r =  (nir-red)/(nir+red)
+      } else {
+        r = raster::raster(f, band=band_i)
+      }
+      
       
       # from 'GIBPE_Aug28_2018_index_ndvi.tif' to 'Aug28-2018' to date object
       date_str = paste(str_split(basename(f),'_')[[1]][2:3], collapse = '-')
@@ -35,7 +53,8 @@ for(site in jorn_sites){
       
       extracted$value = exactextractr::exact_extract(r, site_rois, fun = 'mean')
       extracted$date = date
-      extracted$band = band_i
+      extracted$band = band_color
+      extracted$band_i = band_i
       
       # Throw in the date string from the filename for debugging
       #extracted$date_str = date_str
