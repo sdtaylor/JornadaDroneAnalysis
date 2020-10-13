@@ -16,13 +16,16 @@ roi_ortho_file = 'data/roi_ortho.csv'
 # These are the larger ROIs
 primary_roi_info = tribble(
   ~site_id, ~plant,        ~scale, ~n_cells,
+  'NORT',   'soil',         2,      10,
   'NORT',   'mesquite',     4,      40,
   'NORT',   'none',         30,     10,
 
+  'P9',     'soil',         2,      10,
   'P9',     'grass',        4,      40,
   'P9',     'mesquite',     2,      50,
   'P9',     'none',         30,     10,
   
+  'GIBPE',     'soil',         2,      10,
   'GIBPE',     'grass',        4,      40,
   'GIBPE',     'mesquite',     2,      50,
   'GIBPE',     'none',         30,     10,
