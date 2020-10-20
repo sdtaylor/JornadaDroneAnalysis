@@ -10,13 +10,18 @@ plant_cover = tribble(
   'soil',  0.4
 )
 
-plant_ndvi = data.frame(doy = 1:365,
-                        soil = random_soil_ndvi(),
-                        shrub = random_shrub_ndvi(),
-                        grass = random_grass_ndvi()) %>%
-  pivot_longer(-doy, names_to='plant', values_to='ndvi')
+plant_evi = data.frame(doy = 1:365,
+                        soil = random_soil_vi(),
+                        shrub = random_shrub_vi(),
+                        grass = random_grass_vi()) %>%
+  pivot_longer(-doy, names_to='plant', values_to='evi')
 
-full_ndvi = plant_ndvi %>%
+ggplot(plant_evi, aes(x=doy, y=evi, color=plant)) +
+  geom_point() + 
+  geom_line()
+
+
+full_ndvi = plant_evi %>%
   left_join(plant_cover, by='plant') %>%
   mutate(scaled_ndvi = ndvi*percent_cover) %>%
   group_by(doy) %>%
@@ -36,19 +41,20 @@ for(grass_cover in potential_grass_cover){
     'soil',  1 - grass_cover
   )
   for(bootstrap_i in 1:bootstrap_iterations){
-    plant_ndvi = data.frame(doy = 1:365,
-                            soil = random_soil_ndvi(),
-                            grass = random_grass_ndvi()) %>%
-      pivot_longer(-doy, names_to='plant', values_to='ndvi') %>%
+    plant_evi = data.frame(doy = 1:365,
+                            soil = random_soil_vi(),
+                            grass = random_grass_vi()) %>%
+      pivot_longer(-doy, names_to='plant', values_to='evi') %>%
       left_join(plant_cover, by='plant')
     
-    final_ndvi = plant_ndvi %>%
-      mutate(scaled_ndvi = ndvi*percent_cover) %>%
+    final_evi = plant_evi %>%
+      mutate(scaled_evi = evi*percent_cover) %>%
       group_by(doy) %>%
-      summarise(ndvi = sum(scaled_ndvi), n=n()) %>%
+      summarise(evi = sum(scaled_evi), n=n()) %>%
       ungroup()
     
-    peak_info = find_peaks(final_ndvi)
+    final_evi$vi = final_evi$evi   # find_peaks() needs a 'vi' column
+    peak_info = find_peaks(final_evi)
     peak_info$grass_cover = grass_cover
     peak_info$bootstrap_i = bootstrap_i
     

@@ -27,37 +27,38 @@ calculate_vi_curve = function(winter_vi,  # off season ndvi
 
 # a 365 pure shrub ndvi/evi curve
 random_shrub_vi = function(){
-  calculate_vi_curve(winter_vi  = 0.2,  # off season ndvi
-                       peak_vi    = 0.5,  # ndvi value at peak
-                       fall_vi    = 0.33, # ndvi value at the onset of fall, 2nd highest value
-                       # doy values
-                       spring_onset = 104,   # apr 15
-                       peak         = 152,  # june 1
-                       fall_onset   = 274,  # oct 1
-                       winter_onset = 335,  # dec 1
-                       #
-                       doy          = 1:365,
-                       noise_sd     = 0.03)
+  calculate_vi_curve(winter_vi  = 0.1,  # off season evi
+                     peak_vi    = 0.3,  # evi value at peak
+                     fall_vi    = 0.21, # evi value at the onset of fall, 2nd highest value
+                     # doy values
+                     spring_onset = 104,   # apr 15
+                     peak         = 152,  # june 1
+                     fall_onset   = 274,  # oct 1
+                     winter_onset = 335,  # dec 1
+                     #
+                     doy          = 1:365,
+                     noise_sd     = 0.02)  # from drone imagery using ndvi/2. more/less consistant throughout season
 }
 
-# a 365 pure grass ndvi curve
+# a 365 pure grass EVI curve
 random_grass_vi = function(){
-  calculate_vi_curve(winter_vi  = 0.15,  # off season ndvi
-                       peak_vi    = 0.3,  # ndvi value at peak !!!!!!!!!   Big question mark here !!!!!!!!!!!!!!
-                       fall_vi    = 0.2, # ndvi value at the onset of fall, 2nd highest value
-                       # doy values
-                       spring_onset = 182,   # july 1, note grass onset is highly variable
-                       peak         = 213,   # Aug 1, approx 30 days between onset and peak  
-                       fall_onset   = 244,  # sep 1
-                       winter_onset = 274,  # oct 1
-                       #
-                       doy          = 1:365,
-                       noise_sd     = 0.03)
+  calculate_vi_curve(winter_vi  = 0.1,  # off season evi
+                     peak_vi    = 0.4,  # evi value at peak 
+                     fall_vi    = 0.2,  # evi value at the onset of fall, 2nd highest value
+                     # doy values
+                     spring_onset = 196,   # july 15, note grass onset is highly variable
+                     peak         = 244,   # Aug 1,
+                     fall_onset   = 274,  # oct 1
+                     winter_onset = 305,  # nov 1
+                     #
+                     doy          = 1:365,
+                     noise_sd     = 0.015)  # sd based on modis winter/spring variation around 0.1 EVI
 }
 
 # a 365 pure soil ndvi curve
 # soil has no season so it's just a constant ndvi + noise
-random_soil_vi = function(base_vi = 0.2, noise_sd=0.03){
+# values from from drone imagery using ndvi/2. more/less consistant throughout season
+random_soil_vi = function(base_vi = 0.05, noise_sd=0.01){
   # soil is just constant ndvi with some noise
   vi = rep(base_vi, 365)
   return(vi + rnorm(length(vi),mean=0, sd=noise_sd))
