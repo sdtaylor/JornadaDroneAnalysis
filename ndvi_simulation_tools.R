@@ -2,9 +2,9 @@ library(tidyverse)
 
 # Return NDVI/EVI values based on 4 points of a step function.
 # Optionally with normally distributed noise.
-calculate_ndvi_curve = function(winter_ndvi,  # off season ndvi
-                                peak_ndvi,    # ndvi value at peak
-                                fall_ndvi,    # ndvi value at the onset of fall, 2nd highest value
+calculate_vi_curve = function(winter_vi,  # off season ndvi
+                                peak_vi,    # ndvi value at peak
+                                fall_vi,    # ndvi value at the onset of fall, 2nd highest value
                                 # doy values
                                 spring_onset,   # doy ndvi starts to rise from winter
                                 peak,           # doy of peak
@@ -14,22 +14,22 @@ calculate_ndvi_curve = function(winter_ndvi,  # off season ndvi
                                 doy          = 1:365,
                                 noise_sd     = 0.01  # st. dev for noise around straight lines
 ){
-  ndvi = dplyr::case_when(
-    doy <= spring_onset                    ~ winter_ndvi,
-    doy > spring_onset & doy <= peak       ~ doy * (peak_ndvi-winter_ndvi)/(peak - spring_onset)   +  (peak_ndvi - peak * (peak_ndvi-winter_ndvi)/(peak - spring_onset)),
-    doy > peak & doy <= fall_onset         ~ doy * (fall_ndvi-peak_ndvi)/(fall_onset - peak) +        (fall_ndvi - fall_onset * (fall_ndvi-peak_ndvi)/(fall_onset - peak)),
-    doy > fall_onset & doy <= winter_onset ~ doy * (winter_ndvi-fall_ndvi)/(winter_onset-fall_onset) +  (winter_ndvi - winter_onset *  (winter_ndvi-fall_ndvi)/(winter_onset-fall_onset)),
-    doy > winter_onset                     ~ winter_ndvi
+  vi = dplyr::case_when(
+    doy <= spring_onset                    ~ winter_vi,
+    doy > spring_onset & doy <= peak       ~ doy * (peak_vi-winter_vi)/(peak - spring_onset)   +  (peak_vi - peak * (peak_vi-winter_vi)/(peak - spring_onset)),
+    doy > peak & doy <= fall_onset         ~ doy * (fall_vi-peak_vi)/(fall_onset - peak) +        (fall_vi - fall_onset * (fall_vi-peak_vi)/(fall_onset - peak)),
+    doy > fall_onset & doy <= winter_onset ~ doy * (winter_vi-fall_vi)/(winter_onset-fall_onset) +  (winter_vi - winter_onset *  (winter_vi-fall_vi)/(winter_onset-fall_onset)),
+    doy > winter_onset                     ~ winter_vi
   )
   
-  return(ndvi + rnorm(length(ndvi),mean=0, sd=noise_sd))
+  return(vi + rnorm(length(vi),mean=0, sd=noise_sd))
 }
 
-# a 365 pure shrub ndvi curve
-random_shrub_ndvi = function(){
-  calculate_ndvi_curve(winter_ndvi  = 0.2,  # off season ndvi
-                       peak_ndvi    = 0.5,  # ndvi value at peak
-                       fall_ndvi    = 0.33, # ndvi value at the onset of fall, 2nd highest value
+# a 365 pure shrub ndvi/evi curve
+random_shrub_vi = function(){
+  calculate_vi_curve(winter_vi  = 0.2,  # off season ndvi
+                       peak_vi    = 0.5,  # ndvi value at peak
+                       fall_vi    = 0.33, # ndvi value at the onset of fall, 2nd highest value
                        # doy values
                        spring_onset = 104,   # apr 15
                        peak         = 152,  # june 1
@@ -41,10 +41,10 @@ random_shrub_ndvi = function(){
 }
 
 # a 365 pure grass ndvi curve
-random_grass_ndvi = function(){
-  calculate_ndvi_curve(winter_ndvi  = 0.15,  # off season ndvi
-                       peak_ndvi    = 0.3,  # ndvi value at peak !!!!!!!!!   Big question mark here !!!!!!!!!!!!!!
-                       fall_ndvi    = 0.2, # ndvi value at the onset of fall, 2nd highest value
+random_grass_vi = function(){
+  calculate_vi_curve(winter_vi  = 0.15,  # off season ndvi
+                       peak_vi    = 0.3,  # ndvi value at peak !!!!!!!!!   Big question mark here !!!!!!!!!!!!!!
+                       fall_vi    = 0.2, # ndvi value at the onset of fall, 2nd highest value
                        # doy values
                        spring_onset = 182,   # july 1, note grass onset is highly variable
                        peak         = 213,   # Aug 1, approx 30 days between onset and peak  
@@ -57,16 +57,16 @@ random_grass_ndvi = function(){
 
 # a 365 pure soil ndvi curve
 # soil has no season so it's just a constant ndvi + noise
-random_soil_ndvi = function(base_ndvi = 0.2, noise_sd=0.03){
+random_soil_vi = function(base_vi = 0.2, noise_sd=0.03){
   # soil is just constant ndvi with some noise
-  ndvi = rep(base_ndvi, 365)
-  return(ndvi + rnorm(length(ndvi),mean=0, sd=noise_sd))
+  vi = rep(base_vi, 365)
+  return(vi + rnorm(length(vi),mean=0, sd=noise_sd))
 }
 
 
 # return a data.frame of potential peaks indicating their validity
 # and resulting transition dates. 
-# requires a data.frame with columns c('doy','ndvi')
+# requires a data.frame with columns c('doy','vi')
 find_peaks = function(full_vi_series){
   
   #-----------------
@@ -84,7 +84,7 @@ find_peaks = function(full_vi_series){
   #-----------------
   # the smoothing spline
   #-----------------
-  spline = smooth.spline(full_vi_series$doy, full_vi_series$ndvi)
+  spline = smooth.spline(full_vi_series$doy, full_vi_series$vi)
   
   full_vi_series$smoothed = predict(spline)$y
   full_vi_series$first_deriv = c(NA,diff(full_vi_series$smoothed))
@@ -108,12 +108,12 @@ find_peaks = function(full_vi_series){
     arrange(smoothed) %>%
     pull(peak_id)
   
-  meets_amplitude_threshold1 = function(peak_ndvi, lowpoint_ndvi){peak_ndvi - lowpoint_ndvi >= initial_amplitude_threshold}
+  meets_amplitude_threshold1 = function(peak_vi, lowpoint_vi){peak_vi - lowpoint_vi >= initial_amplitude_threshold}
   
   min_vi = min(full_vi_series$smoothed)
   max_vi = max(full_vi_series$smoothed)
   # whether the peak is 35% of more of the total timeseries amplitude
-  meets_amplitude_threshold2 = function(peak_ndvi, lowpoint_ndvi){peak_ndvi - lowpoint_ndvi >= (max_vi-min_vi)*timseries_amplitude_threshold_percent}
+  meets_amplitude_threshold2 = function(peak_vi, lowpoint_vi){peak_vi - lowpoint_vi >= (max_vi-min_vi)*timseries_amplitude_threshold_percent}
   
   peaks$peak_valid = FALSE
   peaks$peak_rise_doy = NA
@@ -145,24 +145,24 @@ find_peaks = function(full_vi_series){
       next
     }
     
-    candiate_peak_ndvi = full_vi_series %>%
+    candiate_peak_vi = full_vi_series %>%
       filter(doy == candidate_peak_doy) %>%
       pull(smoothed)
     
-    search_window_low_ndvi = full_vi_series %>%
+    search_window_low_vi = full_vi_series %>%
       filter(doy %in% search_window_start:search_window_end) %>%
       filter(smoothed == min(smoothed)) 
     
-    if(!meets_amplitude_threshold1(candiate_peak_ndvi, search_window_low_ndvi$smoothed)){
+    if(!meets_amplitude_threshold1(candiate_peak_vi, search_window_low_vi$smoothed)){
       print('failed amplitude check 1 (>= 0.1)')
-    } else if(!meets_amplitude_threshold2(candiate_peak_ndvi, search_window_low_ndvi$smoothed)){
+    } else if(!meets_amplitude_threshold2(candiate_peak_vi, search_window_low_vi$smoothed)){
       print('failed amplitude check 2 (>= 35% of ts amplitude)')
     } else {
       peaks$peak_valid[peak_i] = TRUE
     }
     
-    peaks$peak_rise_doy = search_window_low_ndvi$doy
-    peaks$peak_rise_vi  = search_window_low_ndvi$smoothed
+    peaks$peak_rise_doy = search_window_low_vi$doy
+    peaks$peak_rise_vi  = search_window_low_vi$smoothed
     
     # evaluating the subsequent low point
     if(peak_i < length(peaks)){
@@ -181,25 +181,25 @@ find_peaks = function(full_vi_series){
       next
     }
     
-    candiate_peak_ndvi = full_vi_series %>%
+    candiate_peak_vi = full_vi_series %>%
       filter(doy == candidate_peak_doy) %>%
       pull(smoothed)
     
-    search_window_low_ndvi = full_vi_series %>%
+    search_window_low_vi = full_vi_series %>%
       filter(doy %in% search_window_start:search_window_end) %>%
       filter(smoothed == min(smoothed)) 
     
-    if(!meets_amplitude_threshold1(candiate_peak_ndvi, search_window_low_ndvi$smoothed)){
+    if(!meets_amplitude_threshold1(candiate_peak_vi, search_window_low_vi$smoothed)){
       print('failed amplitude check 1 (>= 0.1)')
-    } else if(!meets_amplitude_threshold2(candiate_peak_ndvi, search_window_low_ndvi$smoothed)){
+    } else if(!meets_amplitude_threshold2(candiate_peak_vi, search_window_low_vi$smoothed)){
       print('failed amplitude check 2 (>= 35% of ts amplitude)')
     } else {
       peaks$peak_valid[peak_i] = TRUE
     }
     
     
-    peaks$peak_fall_doy = search_window_low_ndvi$doy
-    peaks$peak_fall_vi  = search_window_low_ndvi$smoothed
+    peaks$peak_fall_doy = search_window_low_vi$doy
+    peaks$peak_fall_vi  = search_window_low_vi$smoothed
     
   }
   
