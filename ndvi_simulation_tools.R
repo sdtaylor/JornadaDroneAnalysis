@@ -116,34 +116,47 @@ find_peaks = function(full_vi_series){
   # whether the peak is 35% of more of the total timeseries amplitude
   meets_amplitude_threshold2 = function(peak_vi, lowpoint_vi){peak_vi - lowpoint_vi >= (max_vi-min_vi)*timseries_amplitude_threshold_percent}
   
-  peaks$peak_valid = FALSE
+  peaks$peak_status   = 0  # 0: unevaluted, 1: valid peak, 2: invalid peak
+  peaks$peak_valid    = FALSE
+  peaks$peak_valid_reason = NA
   peaks$peak_rise_doy = NA
   peaks$peak_fall_doy = NA
   peaks$peak_rise_vi  = NA
   peaks$peak_fall_vi  = NA
   
   
+  # 0 - valid
+  # 1 - onset search window mismatch
+  # 2 - 
+  
   # validate each of the initial peaks
   for(peak_i in peak_eval_order){
     candidate_peak_doy = peaks$doy[peak_i]
+    peak_valid = TRUE
     
     #-----------------
     # evaluating the preceding low point
     #-----------------
     if(peak_i>1){
-      prior_peak_doy = peaks$doy[peak_i-1]
+      prior_peak_doy = peaks %>%              # the day of the most prior peak, unless it's been marked invalid already.
+        filter(peak_status %in% c(0,1), 
+               doy < candidate_peak_doy) %>%
+        pull(doy) %>%
+        max()
     } else {
       prior_peak_doy = NA
     }
-    start_of_ts = 1
-    max_greenup_period = candidate_peak_doy -  search_window_max_offset
+    # don't let negative numbers happen
+    max_greenup_period = max(candidate_peak_doy -  search_window_max_offset, start_of_ts)
     
     search_window_start = max(prior_peak_doy, start_of_ts, max_greenup_period, na.rm=T)
-    search_window_end   = candidate_peak_doy - search_window_initial_offset
+    search_window_end   = max(candidate_peak_doy - search_window_initial_offset, start_of_ts)
     
+    #
     if(search_window_end < search_window_start){
-      print('search window mismatch')
-      next
+      search_window_end = search_window_start
+      print(paste0('search window mismatch: ',peak_i))
+      peak_valid = FALSE
     }
     
     candiate_peak_vi = full_vi_series %>%
@@ -156,30 +169,37 @@ find_peaks = function(full_vi_series){
     
     if(!meets_amplitude_threshold1(candiate_peak_vi, search_window_low_vi$smoothed)){
       print('failed amplitude check 1 (>= 0.1)')
+      peak_valid = FALSE
     } else if(!meets_amplitude_threshold2(candiate_peak_vi, search_window_low_vi$smoothed)){
       print('failed amplitude check 2 (>= 35% of ts amplitude)')
-    } else {
-      peaks$peak_valid[peak_i] = TRUE
-    }
+      peak_valid = FALSE
+    } 
     
-    peaks$peak_rise_doy = search_window_low_vi$doy
-    peaks$peak_rise_vi  = search_window_low_vi$smoothed
+    peaks$peak_rise_doy[peak_i] = search_window_low_vi$doy
+    peaks$peak_rise_vi[peak_i]  = search_window_low_vi$smoothed
     
     # evaluating the subsequent low point
-    if(peak_i < length(peaks)){
-      next_peak_doy = peaks$doy[peak_i+1]
+    if(peak_i < nrow(peaks)){
+      next_peak_doy = peaks %>%              # the day of the next peak, unless it's been marked invalid already.
+        filter(peak_status %in% c(0,1), 
+               doy > candidate_peak_doy) %>%
+        pull(doy) %>%
+        min()
+      
     } else {
       next_peak_doy = NA
     }
     
-    max_greenup_period = candidate_peak_doy + search_window_max_offset
+    # dont let numbers beyond the timeseries end happend
+    max_greenup_period = min(candidate_peak_doy + search_window_max_offset, end_of_ts)
     
     search_window_end = min(next_peak_doy, end_of_ts, max_greenup_period, na.rm=T)
-    search_window_start   = candidate_peak_doy + search_window_initial_offset
+    search_window_start   = min(candidate_peak_doy + search_window_initial_offset, end_of_ts)
     
     if(search_window_end < search_window_start){
+      search_window_end = search_window_start + 1
       print('search window mismatch')
-      next
+      peak_valid = FALSE
     }
     
     candiate_peak_vi = full_vi_series %>%
@@ -188,19 +208,21 @@ find_peaks = function(full_vi_series){
     
     search_window_low_vi = full_vi_series %>%
       filter(doy %in% search_window_start:search_window_end) %>%
-      filter(smoothed == min(smoothed)) 
+      filter(smoothed == min(smoothed, na.rm=T)) 
     
     if(!meets_amplitude_threshold1(candiate_peak_vi, search_window_low_vi$smoothed)){
       print('failed amplitude check 1 (>= 0.1)')
+      peak_valid = FALSE
     } else if(!meets_amplitude_threshold2(candiate_peak_vi, search_window_low_vi$smoothed)){
       print('failed amplitude check 2 (>= 35% of ts amplitude)')
-    } else {
-      peaks$peak_valid[peak_i] = TRUE
-    }
+      peak_valid = FALSE
+    } 
     
-    
-    peaks$peak_fall_doy = search_window_low_vi$doy
-    peaks$peak_fall_vi  = search_window_low_vi$smoothed
+    peaks$peak_fall_doy[peak_i] = search_window_low_vi$doy
+    peaks$peak_fall_vi[peak_i]  = search_window_low_vi$smoothed
+
+    peaks$peak_status[peak_i] = ifelse(peak_valid,1,2)
+    peaks$peak_valid[peak_i]  = peak_valid
     
   }
   
