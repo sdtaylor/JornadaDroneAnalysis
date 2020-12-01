@@ -25,6 +25,85 @@ calculate_vi_curve = function(winter_vi,  # off season ndvi
   return(vi + rnorm(length(vi),mean=0, sd=noise_sd))
 }
 
+double_sigmoid = function(doy, V_min, V_amp, m1, m2, m3, m4){
+  first_sigmoid  = 1 / (1 + exp(m1 + (m2*doy)))
+  second_sigmoid = 1 / (1 + exp(m3 + (m4*doy)))
+  return(V_min + V_amp(first_sigmoid - second_sigmoid))
+}
+
+elmore_double_sigmoid = function(doy, m1, m2, m3, m4, m5, m6, m7){
+  # Eq. 4 in Elmore et al. 2012, https://doi.org/10.1111/j.1365-2486.2011.02521.x
+  first_sigmoid  = 1 / (1 + exp((m3-doy)/m4))
+  second_sigmoid = 1 / (1 + exp((m5-doy)/m6))
+  return(m1 + (m2 - (m7*doy))*(first_sigmoid - second_sigmoid))
+}
+
+
+############################
+############################
+# Function for calculating transition dates for a single year via
+# a loess smoothing curve
+extract_phenology = function(df, 
+                             percent_threshold = c(0.1,0.25,0.5),
+                             amplitude_threshold = 0.1,
+                             to_return = 'df'){
+  # print(head(df,1))
+  qa = 0
+  df = arrange(df, doy)
+  full_year = data.frame(doy = -60:450)
+  #smoothed_points = predict(loess(vi ~ doy, span=loess_span, data=df), newdata = full_year)
+  smoothed_points = predict(smooth.spline(df$doy, df$vi), x = full_year$doy)$y
+  smoothed_points = smoothed_points[!is.na(smoothed_points)]
+  
+  meets_amplitude_threshold = max(smoothed_points) - min(smoothed_points) >= amplitude_threshold
+  if(!meets_amplitude_threshold){
+    qa = qa + 1
+  } 
+  
+  scaled_vi = (smoothed_points - min(smoothed_points)) / (max(smoothed_points) - min(smoothed_points))
+  peak = full_year$doy[which.max(scaled_vi)]
+  
+  phenology_df = data.frame()
+  for(threshold in percent_threshold){
+    # onset is the *first* day where the percent of the max is > threshold, and was before the date of peak
+    sos = min(full_year$doy[full_year$doy < peak & scaled_vi > threshold])
+    # end is the *last* day where the percent of the max is > threshold, and was after the date of peak
+    eos = max(full_year$doy[full_year$doy > peak & scaled_vi > threshold])
+    
+    season_length = eos - sos
+    
+    phenology_df = rbind(phenology_df,
+                      data.frame(peak = peak, sos = sos, 
+                                 eos = eos, season_length = season_length,
+                                 threshold = threshold,
+                                 qa = qa))
+    
+  }
+  
+  if(to_return == 'plot'){
+    # return a diagnostic plot with all original points, the smooth line, and resulting phenology
+  
+    x = full_year %>%
+      left_join(df, by='doy')
+    x$smoothed_points = smoothed_points
+    
+    phenology_df_long = phenology_df %>%
+      pivot_longer(c(peak, sos, eos, season_length), names_to = 'metric', values_to='doy')
+    
+    p = ggplot(x, aes(x=doy)) + 
+      geom_point(aes(y=vi)) + 
+      geom_line(aes(y=smoothed_points)) +
+      geom_hline(yintercept = max(smoothed_points) - min(smoothed_points), linetype='dotted') +
+      geom_vline(data = phenology_df_long, aes(xintercept=doy, color=metric))
+    
+    return(p)
+  } else if(to_return == 'df'){
+  #print(unique(df$pixel_id))
+    return(phenology_df)
+  }
+  
+}
+
 # a 365 pure shrub ndvi/evi curve
 random_shrub_vi = function(){
   calculate_vi_curve(winter_vi  = 0.1,  # off season evi
