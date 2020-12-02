@@ -50,7 +50,7 @@ extract_phenology = function(df,
   # print(head(df,1))
   qa = 0
   df = arrange(df, doy)
-  full_year = data.frame(doy = -60:450)
+  full_year = data.frame(doy = 1:365)
   #smoothed_points = predict(loess(vi ~ doy, span=loess_span, data=df), newdata = full_year)
   smoothed_points = predict(smooth.spline(df$doy, df$vi), x = full_year$doy)$y
   smoothed_points = smoothed_points[!is.na(smoothed_points)]
@@ -65,10 +65,10 @@ extract_phenology = function(df,
   
   phenology_df = data.frame()
   for(threshold in percent_threshold){
-    # onset is the *first* day where the percent of the max is > threshold, and was before the date of peak
-    sos = min(full_year$doy[full_year$doy < peak & scaled_vi > threshold])
-    # end is the *last* day where the percent of the max is > threshold, and was after the date of peak
-    eos = max(full_year$doy[full_year$doy > peak & scaled_vi > threshold])
+    # onset is the day where the VI curve crosses the threshold the final time before increasing to the peak
+    sos = max(full_year$doy[full_year$doy < peak & scaled_vi <= threshold])
+    # end is the day where the VI curve crosses the threshold the first time while decreasing from the peak.
+    eos = min(full_year$doy[full_year$doy > peak & scaled_vi <= threshold])
     
     season_length = eos - sos
     
