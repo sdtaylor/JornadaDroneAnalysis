@@ -11,7 +11,7 @@ error_rate = 0.04
 #-------------------------
 # One for 60% cover
 doy_plant_60 = doy_8_day
-doy_plant_60$plant_cover = 'A. 60% Plant Cover'
+doy_plant_60$plant_cover = 'B. 60% Plant Cover'
 # double logistic values to produce, with 0.1 threshold
 # sos: 82, eos 292, season length: 210
 doy_plant_60$pure_endmember_curve = elmore_double_sigmoid(doy_plant_60$doy, 
@@ -32,7 +32,7 @@ doy_plant_60$plant_cubic_spline = predict(smooth.spline(doy_plant_60$doy, doy_pl
 #-------------------------
 # One for 30% cover
 doy_plant_30 = doy_8_day
-doy_plant_30$plant_cover = 'B. 30% Plant Cover'
+doy_plant_30$plant_cover = 'C. 30% Plant Cover'
 # double logistic values to produce, with 0.1 threshold
 # sos: 82, eos 292, season length: 210
 doy_plant_30$pure_endmember_curve = elmore_double_sigmoid(doy_plant_30$doy, 
@@ -51,6 +51,23 @@ doy_plant_30$plant_scaled_with_error = doy_plant_30$plant_scaled + rnorm(nrow(do
 doy_plant_30$plant_cubic_spline = predict(smooth.spline(doy_plant_30$doy, doy_plant_30$plant_scaled_with_error))$y
 
 #---------------------------
+
+
+ggplot(doy_plant_60, aes(x=doy)) + 
+  geom_line(aes(y=pure_endmember_curve), size=1.5) + 
+  scale_x_continuous(limits = c(1,365)) + 
+  theme_minimal() +
+  labs(title = 'A. Plant Endmember VI Curve') + 
+  theme(panel.grid = element_blank(),
+        legend.position = c(0.8,0.45),
+        legend.title = element_blank(),
+        legend.text = element_text(size=14),
+        legend.background = element_rect(color='black'),
+        legend.key.width = unit(20,'mm'),
+        axis.text = element_text(size=10,color='black'),
+        axis.title = element_blank(),
+        strip.text = element_text(size=12, color='black', hjust=0.2))
+
 both = doy_plant_30 %>%
   bind_rows(doy_plant_60) %>%
   pivot_longer(cols = c(plant_scaled, plant_cubic_spline), names_to='curve_type', values_to='curve_value') 
