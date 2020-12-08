@@ -19,11 +19,11 @@ for(site in jorn_sites){
 
   for(f in site_image_list){
     
-    for(band_i in 1:6){
+    for(band_i in 1:5){
       band_color = case_when(
-        band_i == 1 ~ 'red',
+        band_i == 1 ~ 'blue',
         band_i == 2 ~ 'green',
-        band_i == 3 ~ 'blue',
+        band_i == 3 ~ 'red',
         band_i == 4 ~ 'nir',
         band_i == 5 ~ 'rededge',
         band_i == 6 ~ 'ndvi',
@@ -32,7 +32,7 @@ for(site in jorn_sites){
       
       if(band_color=='ndvi'){
         nir = raster::raster(f, band=4)
-        red = raster::raster(f, band=1)
+        red = raster::raster(f, band=3)
         r =  (nir-red)/(nir+red)
       } else {
         r = raster::raster(f, band=band_i)
