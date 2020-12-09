@@ -9,6 +9,7 @@ final_roi_file = 'data/gis/site_rois_3_final.geojson'
 roi_ndvi_file = 'data/roi_ndvi.csv'
 roi_ortho_file = 'data/roi_ortho.csv'
 
+roi_percent_cover_file = 'data/roi_percent_cover.csv'
 # ---------------
 # Site ROI info
 # ---------------
