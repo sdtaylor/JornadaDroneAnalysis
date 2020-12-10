@@ -93,7 +93,7 @@ extract_phenology = function(df,
     p = ggplot(x, aes(x=doy)) + 
       geom_point(aes(y=vi)) + 
       geom_line(aes(y=smoothed_points)) +
-      geom_hline(yintercept = max(smoothed_points) - min(smoothed_points), linetype='dotted') +
+      geom_hline(yintercept = min(smoothed_points) + 0.1, linetype='dotted') +
       geom_vline(data = phenology_df_long, aes(xintercept=doy, color=metric))
     
     return(p)
