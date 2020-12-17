@@ -1,0 +1,34 @@
+// A google earth engine script
+// From the modis phenology product (MCD12Q2 version 6)
+// calculate the percent of years which phenology detection failed.
+// and export at 500m resolution.
+
+var modis_phenology = ee.ImageCollection('MODIS/006/MCD12Q2');
+                  
+
+var highlight_na = function(image){
+  return image.unmask(-1).eq(-1);
+}
+
+var modis_phenology_percent_missing = modis_phenology.map(highlight_na).select('Greenup_1').mean();
+
+Map.setCenter(-110, 35, 5);
+Map.addLayer(modis_phenology_percent_missing);
+
+// Export
+var sw_usa = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[-125, 25],
+          [-95, 25],
+          [-95, 50],
+          [-125, 50]]]);
+
+print(modis_phenology_percent_missing)
+
+Export.image.toDrive({
+  image: modis_phenology_percent_missing,
+  description: 'mcd12q2_percent_missing_values',
+  region: sw_usa,
+  fileNamePrefix: 'mcd12q2_percent_missing',
+  scale: 500,
+  folder: 'earth_engine_stuff'
+});
