@@ -1,0 +1,37 @@
+// A google earth engine script
+// This takes the average percent cover of all elements in 
+// the rangland analysis platform (RAP) from 2001-2019
+// see https://rangelands.app/
+
+var rap = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2')
+            .filter(ee.Filter.date('2001-01-01', '2020-01-01'));
+
+// Get the long term average of each component and
+// combien back into a single multi-band image.
+var afgc = rap.select('AFGC').mean()
+var bg   = rap.select('BG').mean()
+var ltr  = rap.select('LTR').mean()
+var pfgc = rap.select('PFGC').mean()
+var shr  = rap.select('SHR').mean()
+var tree = rap.select('TREE').mean()
+
+var all = ee.Image([afgc, bg, ltr, pfgc, shr, tree])
+print(all)
+Map.setCenter(-110, 35, 5);
+Map.addLayer(pfgc);
+
+// Export
+var sw_usa = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[-125, 25],
+          [-95, 25],
+          [-95, 50],
+          [-125, 50]]]);
+
+Export.image.toDrive({
+  image: all,
+  description: 'rap_average_cover',
+  region: sw_usa,
+  fileNamePrefix: 'RAP_average_cover_2001-2019',
+  scale: 500,
+  folder: 'earth_engine_stuff'
+});

@@ -1,0 +1,52 @@
+// From the modis phenology product (MCD12Q2 version 6)
+// calculate the percent of years which phenology detection failed.
+// and export at 500m resolution.
+
+//Setup a cropland/urban mask
+var find_non_veg = function(image){
+  // mark everything but crop,urban, and crop mosiac as 1
+  var crop  = image.eq(12)
+  var urban = image.eq(13)
+  var crop_mosaic = image.eq(14)
+  return crop.or(urban).or(crop_mosaic).multiply(-1).add(1)
+}
+
+// pixels where it's non-crop or urban *every* year.
+var veg_every_year = ee.ImageCollection("MODIS/006/MCD12Q1").select('LC_Type1')
+      .map(find_non_veg)
+      .mean()
+      .eq(1); // eq(1) for 100% of years being non-urban/crop.
+
+//
+var modis_phenology = ee.ImageCollection('MODIS/006/MCD12Q2');
+                  
+
+var highlight_na = function(image){
+  return image.unmask(-1).eq(-1);
+}
+
+var modis_phenology_percent_missing = modis_phenology.map(highlight_na)
+    .select('Greenup_1')
+    .mean()
+    .mask(veg_every_year);
+
+Map.setCenter(-110, 35, 5);
+Map.addLayer(modis_phenology_percent_missing);
+
+// Export
+var sw_usa = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[-125, 25],
+          [-95, 25],
+          [-95, 50],
+          [-125, 50]]]);
+
+print(modis_phenology_percent_missing)
+
+Export.image.toDrive({
+  image: modis_phenology_percent_missing,
+  description: 'mcd12q2_percent_missing_values',
+  region: sw_usa,
+  fileNamePrefix: 'mcd12q2_percent_missing',
+  scale: 500,
+  folder: 'earth_engine_stuff'
+});
