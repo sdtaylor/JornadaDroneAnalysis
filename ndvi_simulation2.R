@@ -71,6 +71,9 @@ for(cover_i in 1:nrow(cover_values)){
             # parameter in the double sigmoid
             final_amplitude = max(df$plant) - min(df$plant)
             
+            # The true VI peak from the pure endmember curve.
+            true_peak = doy[which.max(df$plant)]
+            
             # soil is a constant
             df$soil = soil_ndvi
             
@@ -94,6 +97,7 @@ for(cover_i in 1:nrow(cover_values)){
             
             phenology$plant_cover =  cover_values$plant[cover_i]
             phenology$amplitude   = final_amplitude
+            phenology$true_peak_doy = true_peak
             phenology$error       = error
             phenology$bootstrap = i
             
@@ -110,4 +114,4 @@ for(cover_i in 1:nrow(cover_values)){
 }
 
 
-write_csv(final_phenology_results, 'data/vi_simulation_results.R')
+write_csv(final_phenology_results, 'data/vi_simulation_results.csv')
