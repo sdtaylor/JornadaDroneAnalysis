@@ -51,7 +51,7 @@ percent_meeting_amplitude_labels = tribble(
 )
 percent_meeting_amplitude_labels$amplitude_label = paste0('a=',percent_meeting_amplitude_labels$amplitude)
 error_levels = c(0.02,0.04)
-error_labels = c('Error Rate : 0.02', 'Error Rate : 0.04')
+error_labels = c('Error S.D. : 0.02', 'Error S.D. : 0.04')
 percent_meeting_amplitude_labels$error = factor(percent_meeting_amplitude_labels$error, levels = error_levels, labels=error_labels)
 
 primary_plant_amplitudes = c(0.14, 0.22, 0.41, 0.61, 0.80)
@@ -81,7 +81,7 @@ vi_simulation_results %>%
         axis.title = element_text(size=14),
         strip.text = element_text(size=16),
         strip.background = element_blank()) +
-  labs(x='Plant Percent Cover',y='Percent of permutations where \npixel scale amplitude > 0.1')
+  labs(x='Fractional Vegetation Cover',y='Proportion of simulations where \namplitude > 0.1')
 
 #-----------------------------------
 #-----------------------------------
@@ -92,7 +92,7 @@ true_phenology_metrics = vi_simulation_results %>%
   filter(error == 0, plant_cover==1) %>% 
   select(-bootstrap) %>% 
   distinct() %>%
-  select(threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
+  select(threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak, true_peak_doy)
 
 vi_simulation_results %>%
   left_join(true_phenology_metrics, by=c('threshold','amplitude')) %>% 
