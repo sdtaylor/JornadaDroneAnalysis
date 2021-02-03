@@ -10,9 +10,10 @@ n_bootstraps = 200
 
 error_rates = c(0, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1)
 # error_rates = c(0.02)
-#amplitude_rates = c(0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1.0)
-amplitude_rates = seq(0.25,1.0,0.05)
 
+# These are values for the m2 parameter in the elmore function and correspond to 
+# final amplitudes of c(0.2,  0.4,  0.6,   0.8)
+amplitude_rates =    c(0.335, 0.54, 0.745, 0.95)
 ###############
 # generate all combinations of soil/plant cover
 cover_step = 2
