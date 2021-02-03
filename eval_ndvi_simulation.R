@@ -54,11 +54,8 @@ error_levels = c(0.02,0.04)
 error_labels = c('Error S.D. : 0.02', 'Error S.D. : 0.04')
 percent_meeting_amplitude_labels$error = factor(percent_meeting_amplitude_labels$error, levels = error_levels, labels=error_labels)
 
-primary_plant_amplitudes = c(0.14, 0.22, 0.41, 0.61, 0.80)
-
 # Percent of time the 0.1 threshold is met
 vi_simulation_results %>%
-  mutate(plant_cover = ceiling(plant_cover*10*2)/2/10) %>% # round to the nearest 0.05
   group_by(threshold, plant_cover, amplitude, error) %>%
   summarise(percent_meeting_amplitude = 1 - mean(qa),
             n=n()) %>%
@@ -66,7 +63,7 @@ vi_simulation_results %>%
   filter(threshold %in% c(0.1)) %>% 
   filter(error %in% c(0.02,0.04)) %>%
   mutate(error = factor(error, levels = error_levels, labels=error_labels)) %>%
-  filter(round(amplitude,2) %in% primary_plant_amplitudes) %>% 
+  filter(round(amplitude,2) %in% c(0.14, 0.22, 0.41, 0.61, 0.80)) %>% 
   ggplot(aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
   geom_line(size=1) +
   geom_point(size=2) + 
@@ -84,38 +81,63 @@ vi_simulation_results %>%
   labs(x='Fractional Vegetation Cover',y='Proportion of simulations where \namplitude > 0.1')
 
 #-----------------------------------
+# MAE of estimates figure in relation to frac. cover, error, and amplitude.
 #-----------------------------------
 
-# The "true" sos/eos dates are obtained with 100% cover and 0 error
+# The "true" sos/eos dates are obtained with 100%  veg cover and 0 error
 # note they will change slightly w/ amplitude
 true_phenology_metrics = vi_simulation_results %>% 
   filter(error == 0, plant_cover==1) %>% 
   select(-bootstrap) %>% 
   distinct() %>%
-  select(threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak, true_peak_doy)
+  mutate(sos = ifelse(is.infinite(sos), 1, sos),
+         eos = ifelse(is.infinite(eos),365, eos)) %>%
+  select(threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
+
+bias_figure_labels = tribble(
+  ~error, ~amplitude, ~plant_cover, ~percent_meeting_amplitude, 
+  0.02,    0.14,           0.7,         0.25,
+  0.02,    0.41,           0.28,         0.5,
+  0.02,    0.80,           0.15,         0.88,
+  
+  0.04,    0.14,           0.7,         0.25,
+  0.04,    0.41,           0.28,        0.5,
+  0.04,    0.80,           0.15,         0.88
+)
 
 vi_simulation_results %>%
   left_join(true_phenology_metrics, by=c('threshold','amplitude')) %>% 
-  group_by(threshold, plant_cover, amplitude, error) %>%
   mutate(sos = ifelse(is.infinite(sos), 1, sos),
          eos = ifelse(is.infinite(eos),365, eos)) %>%
-  mutate(sos_bias = sos-sos_true,
-         eos_bias = eos-eos_true,
-         peak_bias = peak - peak_true) %>%
-  filter(threshold %in% c(0.1,0.25)) %>% 
+  group_by(threshold, plant_cover, amplitude, error) %>%
+  summarise(SOS = mean(abs(sos-sos_true)),
+            EOS = mean(abs(eos-eos_true)),
+            Peak = mean(abs(peak - peak_true)),
+            n=n()) %>%
+  ungroup() %>%
+  filter(threshold %in% c(0.1)) %>% 
   filter(error %in% c(0.02,0.04)) %>%
-  filter(plant_cover %in% primary_plant_cover) %>%
-  ggplot(aes(x=amplitude, y = sos_bias, color=as.factor(plant_cover))) +
-  geom_smooth(method='loess', se=F) + 
-  #geom_line() +
-  #geom_point() + 
+  filter(round(amplitude,2) %in% c(0.14,0.41,0.80)) %>% 
+  pivot_longer(c(SOS, EOS, Peak), names_to='metric', values_to='metric_values') %>%
+  mutate(error = factor(error, levels = error_levels, labels=error_labels)) %>%
+  mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'), ordered = T)) %>%
+  #filter(plant_cover %in% primary_plant_cover) %>%
+  ggplot(aes(x=plant_cover, y = metric_values, color=as.factor(amplitude))) +
+  #geom_smooth(method='loess', se=F) + 
+  geom_line(show.legend = F) +
+  geom_point() + 
   #ylim(-10,50) + 
-  scale_color_viridis_d() +
-  facet_grid(threshold~error, labeller = label_both) + 
-  theme_bw() +
-  theme(legend.position = 'none',
-        axis.text = element_text(color='black', size=8),
-        strip.text = element_text(size=12),
+  scale_color_viridis_d(end=0.8, labels=c('0.14','0.41','0.80')) +
+  scale_y_continuous(breaks = seq(0,160,20)) + 
+  facet_grid(metric~error) + 
+  theme_bw(15) +
+  theme(legend.position = c(0.85,0.55),
+        legend.background = element_rect(color='black'),
+        legend.text = element_text(size=15),
+        axis.text = element_text(color='black'),
+        strip.text = element_text( size=16, face='bold'),
         strip.background = element_blank()) +
-  labs(x='Relative amplitude of plant endmember',y='Percent of permutations where \npixel scale amplitude > 0.1')
+  labs(x='Fractional Vegetation Cover' ,y='Mean Absolute Error of Estimates',
+       color='Pure Endmember\nAmplitude') +
+  guides(color=guide_legend(override.aes = list(size=3)))
 
