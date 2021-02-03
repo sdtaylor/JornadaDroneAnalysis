@@ -12,8 +12,8 @@ error_rates = c(0, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1)
 # error_rates = c(0.02)
 
 # These are values for the m2 parameter in the elmore function and correspond to 
-# final amplitudes of c(0.2,  0.4,  0.6,   0.8)
-amplitude_rates =    c(0.335, 0.54, 0.745, 0.95)
+# final amplitudes of c(0.1,  0.2,  0.3,   0.4    0.5,   0.6,  0.7,  0.8)
+amplitude_rates =    c(0.18, 0.285, 0.387, 0.488, 0.588, 0.69, 0.79, 0.89)
 ###############
 # generate all combinations of soil/plant cover
 cover_step = 2
@@ -66,7 +66,7 @@ for(cover_i in 1:nrow(cover_values)){
                                              m4 = 8,
                                              m5 = 280, 
                                              m6 = 8,
-                                             m7 = 0.001)
+                                             m7 = 0.0006)
       
             # final amplitude between winter and peak will be different than the m2
             # parameter in the double sigmoid
