@@ -29,7 +29,6 @@ vi_simulation_results %>%
   facet_wrap(metric~threshold, ncol=3)
 
 
-primary_plant_cover = c(0.1, 0.2, 0.4, 0.6, 0.8)
 
 
 #-----------------------------------
@@ -37,17 +36,17 @@ primary_plant_cover = c(0.1, 0.2, 0.4, 0.6, 0.8)
 #-----------------------------------
 percent_meeting_amplitude_labels = tribble(
   ~error, ~amplitude, ~plant_cover, ~percent_meeting_amplitude, 
-  0.02,    0.14,           0.7,         0.25,
-  0.02,    0.22,           0.48,         0.4,
-  0.02,    0.41,           0.28,         0.5,
-  0.02,    0.61,           0.2,         0.65,
-  0.02,    0.80,           0.15,         0.88,
+  0.02,    0.1,           0.7,         0.25,
+  0.02,    0.2,           0.48,         0.4,
+  0.02,    0.4,           0.28,         0.5,
+  #0.02,    0.6,           0.2,         0.65,
+  0.02,    0.8,           0.15,         0.88,
   
-  0.04,    0.14,           0.7,         0.25,
-  0.04,    0.22,           0.48,         0.4,
-  0.04,    0.41,           0.28,        0.5,
-  0.04,    0.61,           0.2,         0.65,
-  0.04,    0.80,           0.15,         0.88
+  0.04,    0.1,           0.7,         0.25,
+  0.04,    0.2,           0.48,         0.4,
+  0.04,    0.4,           0.28,        0.5,
+  #0.04,    0.6,           0.2,         0.65,
+  0.04,    0.8,           0.15,         0.88
 )
 percent_meeting_amplitude_labels$amplitude_label = paste0('a=',percent_meeting_amplitude_labels$amplitude)
 error_levels = c(0.02,0.04)
@@ -63,17 +62,19 @@ vi_simulation_results %>%
   filter(threshold %in% c(0.1)) %>% 
   filter(error %in% c(0.02,0.04)) %>%
   mutate(error = factor(error, levels = error_levels, labels=error_labels)) %>%
-  filter(round(amplitude,2) %in% c(0.14, 0.22, 0.41, 0.61, 0.80)) %>% 
+  filter(round(amplitude,2) %in% c(0.1, 0.2, 0.4, 0.8)) %>% 
   ggplot(aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
-  geom_line(size=1) +
-  geom_point(size=2) + 
-  geom_label(data=percent_meeting_amplitude_labels, aes(label=amplitude_label)) + 
-  scale_x_continuous(breaks=c(0.05,0.25,0.5,0.75,1.0)) + 
+  geom_line(size=2) +
+  #geom_point(size=2) + 
+  geom_label(data=percent_meeting_amplitude_labels, aes(label=amplitude_label), size=4) + 
+  scale_x_continuous(breaks=seq(0,1,0.2)) + 
   scale_color_viridis_d(end=0.8) +
   #scale_color_brewer(palette='Blues') + 
   facet_wrap(~error, labeller = label_value) +
   theme_bw() +
   theme(legend.position = 'none',
+        panel.grid.major = element_line(color='grey70', size=0.7),
+        panel.grid.minor = element_line(color='grey90', size=0.8),
         axis.text = element_text(color='black', size=12),
         axis.title = element_text(size=14),
         strip.text = element_text(size=16),
@@ -96,13 +97,13 @@ true_phenology_metrics = vi_simulation_results %>%
 
 bias_figure_labels = tribble(
   ~error, ~amplitude, ~plant_cover, ~percent_meeting_amplitude, 
-  0.02,    0.14,           0.7,         0.25,
-  0.02,    0.41,           0.28,         0.5,
-  0.02,    0.80,           0.15,         0.88,
+  0.02,    0.1,           0.7,         0.25,
+  0.02,    0.4,           0.28,         0.5,
+  0.02,    0.8,           0.15,         0.88,
   
-  0.04,    0.14,           0.7,         0.25,
-  0.04,    0.41,           0.28,        0.5,
-  0.04,    0.80,           0.15,         0.88
+  0.04,    0.1,           0.7,         0.25,
+  0.04,    0.4,           0.28,        0.5,
+  0.04,    0.8,           0.15,         0.88
 )
 
 vi_simulation_results %>%
@@ -117,27 +118,28 @@ vi_simulation_results %>%
   ungroup() %>%
   filter(threshold %in% c(0.1)) %>% 
   filter(error %in% c(0.02,0.04)) %>%
-  filter(round(amplitude,2) %in% c(0.14,0.41,0.80)) %>% 
+  filter(round(amplitude,2) %in% c(0.1,0.2,0.4,0.8)) %>% 
   pivot_longer(c(SOS, EOS, Peak), names_to='metric', values_to='metric_values') %>%
   mutate(error = factor(error, levels = error_levels, labels=error_labels)) %>%
-  mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'), ordered = T)) %>%
-  #filter(plant_cover %in% primary_plant_cover) %>%
+  mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'), ordered = T)) %>% 
   ggplot(aes(x=plant_cover, y = metric_values, color=as.factor(amplitude))) +
   #geom_smooth(method='loess', se=F) + 
-  geom_line(show.legend = F) +
-  geom_point() + 
-  #ylim(-10,50) + 
-  scale_color_viridis_d(end=0.8, labels=c('0.14','0.41','0.80')) +
-  scale_y_continuous(breaks = seq(0,160,20)) + 
+  geom_line(size=1.8) +
+  #geom_point(size=2) + 
+  scale_color_viridis_d(end=0.8, labels=c('0.1','0.2','0.4','0.8')) +
+  scale_y_continuous(breaks = seq(0,160,20), expand=expansion(mult=0.02)) + 
+  scale_x_continuous(breaks=seq(0,1,0.2), expand=expansion(mult=0.05)) + 
   facet_grid(metric~error) + 
   theme_bw(15) +
-  theme(legend.position = c(0.85,0.55),
+  theme(legend.position = c(0.86,0.55),
         legend.background = element_rect(color='black'),
         legend.text = element_text(size=15),
+        panel.grid.major = element_line(color='grey50', size=0.4),
+        panel.grid.minor = element_line(color='grey90', size=0.5),
         axis.text = element_text(color='black'),
         strip.text = element_text( size=16, face='bold'),
         strip.background = element_blank()) +
   labs(x='Fractional Vegetation Cover' ,y='Mean Absolute Error of Estimates',
        color='Pure Endmember\nAmplitude') +
-  guides(color=guide_legend(override.aes = list(size=3)))
+  guides(color=guide_legend(override.aes = list(size=3), keywidth = unit(15,'mm')))
 
