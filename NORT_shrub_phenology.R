@@ -69,15 +69,16 @@ all_phenology %>%
   filter(threshold==0.1) %>%
   mutate(meets_threshold = qa==0) %>%
   mutate(mesquite_cover_bin = ceiling(mesquite*10*2)/2/10) %>% # round to the nearest 0.05
+  #mutate(mesquite_cover_bin = round(mesquite,2)) %>%
   group_by(mesquite_cover_bin) %>%
-  summarise(percent_meeting_threshold = mean(meets_threshold)) %>%
-  ungroup() %>%
+  summarise(percent_meeting_threshold = mean(meets_threshold), n=n()) %>%
+  ungroup() %>% 
 ggplot(aes(x=mesquite_cover_bin, y=percent_meeting_threshold)) + 
-  geom_point() +
-  geom_line() +
+  geom_point(size=5) +
+  geom_line(size=2) +
   scale_x_continuous(breaks=c(0.1,0.2,0.3,0.4,0.5,0.6)) + 
   theme_bw() +
   theme(legend.position = 'none',
-        axis.text = element_text(color='black', size=12),
-        axis.title = element_text(size=14)) + 
-  labs(x='Mesquite Percent Cover', y='Percent of 8m pixels where \namplitude > 0.1')
+        axis.text = element_text(color='black', size=25),
+        axis.title = element_text(size=35)) + 
+  labs(x='Mesquite Fractional Cover', y='Percent of Drone Pixels with\namplitude > 0.1')
