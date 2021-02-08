@@ -10,37 +10,17 @@ vi_simulation_results = read_csv('data/vi_simulation_results.csv')
 # threshold, 0.1, 0.25, 0.5
 # bootstraps (50)
 
-# just looking at whether it meets 0.1 amplitude rise
-vi_simulation_results %>%
-  filter(threshold==0.1) %>% 
-  group_by(plant_cover) %>%
-  summarise(percent_meeting_amplitude = 1 - mean(qa)) %>%
-  ungroup() %>%
-  ggplot(aes(x=plant_cover, y=percent_meeting_amplitude)) +
-  geom_point()
-
-
-vi_simulation_results %>%
-  filter(error==0.02) %>%
-  pivot_longer(c(peak, sos, eos, season_length), names_to='metric', values_to='value') %>%
-  ggplot(aes(x=as.factor(plant_cover), y=value)) + 
-  geom_jitter(alpha=0.2) + 
-  geom_vline(xintercept = as.factor(0.3)) + 
-  facet_wrap(metric~threshold, ncol=3)
-
-
-
 
 #-----------------------------------
 # percent of time the pixel scale amplitude is > 0.1
 #-----------------------------------
 percent_meeting_amplitude_labels = tribble(
   ~error, ~amplitude, ~plant_cover, ~percent_meeting_amplitude, 
-  0.02,    0.1,           0.7,         0.25,
-  0.02,    0.2,           0.48,         0.4,
-  0.02,    0.4,           0.28,         0.5,
-  #0.02,    0.6,           0.2,         0.65,
-  0.02,    0.8,           0.15,         0.88,
+  0.01,    0.1,           0.80,         0.25,
+  0.01,    0.2,           0.48,         0.4,
+  0.01,    0.4,           0.28,         0.5,
+  #0.01,    0.6,           0.2,         0.65,
+  0.01,    0.8,           0.12,         0.88,
   
   0.04,    0.1,           0.7,         0.25,
   0.04,    0.2,           0.48,         0.4,
@@ -48,25 +28,28 @@ percent_meeting_amplitude_labels = tribble(
   #0.04,    0.6,           0.2,         0.65,
   0.04,    0.8,           0.15,         0.88
 )
-percent_meeting_amplitude_labels$amplitude_label = paste0('a=',percent_meeting_amplitude_labels$amplitude)
-error_levels = c(0.02,0.04)
-error_labels = c('Error S.D. : 0.02', 'Error S.D. : 0.04')
+percent_meeting_amplitude_labels$amplitude_label = paste0('VI[veg] == ',percent_meeting_amplitude_labels$amplitude)
+error_levels = c(0.01,0.04)
+error_labels = c('Error S.D. : 0.01', 'Error S.D. : 0.04')
 percent_meeting_amplitude_labels$error = factor(percent_meeting_amplitude_labels$error, levels = error_levels, labels=error_labels)
 
 # Percent of time the 0.1 threshold is met
-vi_simulation_results %>%
+percent_meeting_amplitude_data = vi_simulation_results %>%
   group_by(threshold, plant_cover, amplitude, error) %>%
   summarise(percent_meeting_amplitude = 1 - mean(qa),
             n=n()) %>%
   ungroup() %>%
   filter(threshold %in% c(0.1)) %>% 
-  filter(error %in% c(0.02,0.04)) %>%
+  filter(error %in% c(0.01,0.04)) %>%
   mutate(error = factor(error, levels = error_levels, labels=error_labels)) %>%
-  filter(round(amplitude,2) %in% c(0.1, 0.2, 0.4, 0.8)) %>% 
-  ggplot(aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
+  filter(round(amplitude,2) %in% c(0.1, 0.2, 0.4, 0.8))
+
+
+ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
   geom_line(size=2) +
   #geom_point(size=2) + 
-  geom_label(data=percent_meeting_amplitude_labels, aes(label=amplitude_label), size=4) + 
+  geom_label(data=percent_meeting_amplitude_labels, label='                    ',color='black', label.size=0.5) + 
+  geom_text(data=percent_meeting_amplitude_labels, aes(label=amplitude_label), parse=T, size=4) + 
   scale_x_continuous(breaks=seq(0,1,0.2)) + 
   scale_color_viridis_d(end=0.8) +
   #scale_color_brewer(palette='Blues') + 
@@ -79,7 +62,23 @@ vi_simulation_results %>%
         axis.title = element_text(size=14),
         strip.text = element_text(size=16),
         strip.background = element_blank()) +
-  labs(x='Fractional Vegetation Cover',y='Proportion of simulations where \namplitude > 0.1')
+  labs(x='Fractional Vegetation Cover',y=bquote(atop('Proportion of simulations where',VI[pixel]~' amplitude > 0.1')))
+
+
+# The difference between the two Fig 2 panels. aka the affect of doubling the error rate
+# this is probably a supplement figure
+percent_meeting_amplitude_data %>%
+  mutate(error = fct_recode(error, 'error01' = 'Error S.D. : 0.01', 'error04' = 'Error S.D. : 0.04')) %>% # rename this factor to something that can be column names
+  pivot_wider(names_from='error', values_from='percent_meeting_amplitude') %>% 
+  group_by(plant_cover, amplitude) %>%
+  summarise(difference = error01 - error04) %>% 
+  ungroup() %>%
+  ggplot(aes(x=plant_cover, y=difference, color=as.factor(round(amplitude,2)))) + 
+  geom_line(size=1.5) +
+  scale_color_viridis_d(end=0.8) +
+  theme_bw() + 
+  labs(y='Difference in Proportion of simulations meeting thresholds\n Error:0.01 - Error:0.04',
+       x='Fractional Vegetation Cover', color='VI_veg Amplitude')
 
 #-----------------------------------
 # MAE of estimates figure in relation to frac. cover, error, and amplitude.
