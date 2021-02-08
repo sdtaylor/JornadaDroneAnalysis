@@ -78,7 +78,7 @@ percent_meeting_amplitude_data %>%
   scale_color_viridis_d(end=0.8) +
   theme_bw() + 
   labs(y='Difference in Proportion of simulations meeting thresholds\n Error:0.01 - Error:0.04',
-       x='Fractional Vegetation Cover', color='VI_veg Amplitude')
+       x='Fractional Vegetation Cover', color=bquote(VI[veg]~'Amplitude'))
 
 #-----------------------------------
 # MAE of estimates figure in relation to frac. cover, error, and amplitude.
@@ -96,9 +96,9 @@ true_phenology_metrics = vi_simulation_results %>%
 
 bias_figure_labels = tribble(
   ~error, ~amplitude, ~plant_cover, ~percent_meeting_amplitude, 
-  0.02,    0.1,           0.7,         0.25,
-  0.02,    0.4,           0.28,         0.5,
-  0.02,    0.8,           0.15,         0.88,
+  0.01,    0.1,           0.7,         0.25,
+  0.01,    0.4,           0.28,         0.5,
+  0.01,    0.8,           0.15,         0.88,
   
   0.04,    0.1,           0.7,         0.25,
   0.04,    0.4,           0.28,        0.5,
@@ -116,29 +116,31 @@ vi_simulation_results %>%
             n=n()) %>%
   ungroup() %>%
   filter(threshold %in% c(0.1)) %>% 
-  filter(error %in% c(0.02,0.04)) %>%
+  filter(error %in% c(0.01,0.04)) %>%
   filter(round(amplitude,2) %in% c(0.1,0.2,0.4,0.8)) %>% 
   pivot_longer(c(SOS, EOS, Peak), names_to='metric', values_to='metric_values') %>%
   mutate(error = factor(error, levels = error_levels, labels=error_labels)) %>%
   mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'), ordered = T)) %>% 
   ggplot(aes(x=plant_cover, y = metric_values, color=as.factor(amplitude))) +
   #geom_smooth(method='loess', se=F) + 
-  geom_line(size=1.8) +
+  geom_line(size=1.5) +
   #geom_point(size=2) + 
   scale_color_viridis_d(end=0.8, labels=c('0.1','0.2','0.4','0.8')) +
   scale_y_continuous(breaks = seq(0,160,20), expand=expansion(mult=0.02)) + 
-  scale_x_continuous(breaks=seq(0,1,0.2), expand=expansion(mult=0.05)) + 
+  scale_x_continuous(breaks=seq(0,1,0.2), expand=expansion(mult=0.05)) +
+  coord_cartesian(ylim=c(0,100)) + 
   facet_grid(metric~error) + 
   theme_bw(15) +
-  theme(legend.position = c(0.86,0.55),
+  theme(legend.position = c(0.36,0.55),
         legend.background = element_rect(color='black'),
-        legend.text = element_text(size=15),
+        legend.text = element_text(size=13),
+        legend.title = element_text(size=16),
         panel.grid.major = element_line(color='grey50', size=0.4),
         panel.grid.minor = element_line(color='grey90', size=0.5),
         axis.text = element_text(color='black'),
         strip.text = element_text( size=16, face='bold'),
         strip.background = element_blank()) +
   labs(x='Fractional Vegetation Cover' ,y='Mean Absolute Error of Estimates',
-       color='Pure Endmember\nAmplitude') +
+       color=bquote(VI[veg]~'Amplitude')) +
   guides(color=guide_legend(override.aes = list(size=3), keywidth = unit(15,'mm')))
 
