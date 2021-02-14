@@ -10,6 +10,13 @@ roi_ndvi_file = 'data/roi_ndvi.csv'
 roi_ortho_file = 'data/roi_ortho.csv'
 
 roi_percent_cover_file = 'data/roi_percent_cover.csv'
+
+
+random_roi_size = 8
+random_rois_per_site = 5000
+random_roi_file = 'data/gis/site_random_rois.geojson'
+random_roi_ndvi_file = 'data/random_roi_ndvi.csv'
+
 # ---------------
 # Site ROI info
 # ---------------
