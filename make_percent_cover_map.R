@@ -4,67 +4,77 @@ library(sf)
 library(patchwork)
 
 
+ecoregions = st_read('./data/us_eco_l3_state_boundaries/us_eco_l3_state_boundaries.shp') %>%
+  filter(NA_L1CODE == 10) %>%
+  filter(NA_L3NAME != 'Chihuahuan Deserts') %>%     # This is a small chunk of the CH desert in AZ. 
+  mutate(NA_L3NAME = recode(NA_L3NAME, 'Arizona/New Mexico Plateau'= 'Arizona-NM Plateau',
+                            'Sonoran Basin and Range' = 'Sonoran Desert')) %>%
+  group_by(NA_L3NAME) %>%
+  summarize() %>%
+  ungroup() %>%
+  st_union(by_feature = T) %>%
+  st_buffer(0.01)
 
+# only north american deserts shapefile for us in qgis
+st_write(ecoregions, './data/gis/desert_ecoregions/NA_Desert_ecoregions.shp')
+
+# Create some cropped rasters for use in QGIS
 mean_cover_raster = read_stars('./data/rap_cover/RAP_average_cover_2000-2019.tif')
 std_cover_raster  = read_stars('./data/rap_cover/RAP_std_cover_2000-2019.tif')
 
-ecoregions = st_read('./data/gis/NA_Desert_ecoregions.geojson')
-
 ecoregions = st_transform(ecoregions, crs=st_crs(mean_cover_raster))
 
+mean_cover_raster = st_crop(mean_cover_raster, ecoregions)
+std_cover_raster = st_crop(std_cover_raster, ecoregions)
 
-legend_guide = guide_colorsteps(even.steps = F,
-                                label.theme = element_text(size=12),
-                                barwidth = unit(80,'mm'),
-                                #title = 'Average Fractional Cover 2000-2019',
-                                title.position='top',
-                                #title.theme = element_text(size=18),
-                                title.theme = element_blank(),
-                                direction='horizontal')
+write_stars(mean_cover_raster,'./data/rap_cover/RAP_average_cover_2000-2019_cropped.tif')
+write_stars(std_cover_raster, './data/rap_cover/RAP_std_cover_2000-2019_cropped.tif')
 
-map_theme = theme_minimal() + 
-  theme(axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.ticks = element_blank(),
-        panel.grid = element_blank(),
-        plot.background = element_rect(color='black', fill='white',size=1),
-        plot.title = element_text(size=18),
-        legend.background = element_rect(color='black',fill='white'),
-        legend.position = c(0.25,0.15))
 
-#--------------------------------
-mean_color_palette = c('#ffffcc','#d9f0a3','#addd8e','#78c679','#41ab5d','#238443','#005a32')
 
-mean_map = ggplot() + 
-  geom_stars(data=mean_cover_raster,downsample=0) +
-  geom_sf(data=ecoregions, fill='transparent',color='black') +
-  scale_fill_stepsn(colors = mean_color_palette, 
-                    breaks = c(0,10,20,30,40,50,60,70,80,90,100),
-                    limits = c(0,100),
-                    na.value='white',
-                    guide =  legend_guide)+ 
-  coord_sf(xlim=c(-125,-106),ylim=c(31,42)) +
-  labs(title = 'A. Average Fractional Cover 2000-2019') +
-  map_theme
+for(this_ecoregion in unique(as.character(ecoregions$NA_L3NAME))){
+  e = ecoregions %>%
+    filter(NA_L3NAME==this_ecoregion)
   
+  # Instead of making histograms for every pixel within each ecoregion
+  # just sample a large number. 
+  random_points = st_sample(e, size=50000)
+  
+  #---------------
+  mean_cover = st_extract(mean_cover_raster, random_points) %>%
+    st_set_geometry(NULL)
+  colnames(mean_cover) <- 'value'
 
-#--------------------------------
-std_color_palette = c('#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000')
+  mean_cover_fig = ggplot(mean_cover, aes(value)) +
+    geom_density(size=3, color='#009e73') +
+    scale_x_continuous(breaks=c(0,20,40,60,80,100), labels = function(x){paste0(x,'%')}, limits=c(0,100)) +
+    theme_bw() +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.text.x = element_text(color='black',size=12),
+          axis.title  = element_text(size=18),
+          plot.title = element_text(size=21)) +
+    labs(x='Fractional Cover',y='Density', title=this_ecoregion)
 
-std_map = ggplot() + 
-  geom_stars(data=std_cover_raster,downsample=0, na.rm=T) +
-  geom_sf(data=ecoregions, fill='transparent',color='black') +
-  scale_fill_stepsn(colors = std_color_palette, 
-                    breaks = c(0,5,10,15,20),
-                    labels = c('0','5','10','15','20+'),
-                    limits = c(0,25),
-                    na.value='white',
-                    guide = legend_guide) + 
-  coord_sf(xlim=c(-125,-106),ylim=c(31,42)) +
-  labs(title = 'B. Annual Variation in Fractional Cover') +
-  map_theme 
+  ggsave(paste0('./manuscript/map_figure/',this_ecoregion,'_mean_cover.png'), mean_cover_fig, width=10, height=8, units='cm')
+  
+  #---------------
+  std_cover = st_extract(std_cover_raster, random_points) %>%
+    st_set_geometry(NULL)
+  colnames(std_cover) <- 'value'
 
-#-------------------------------
-both = mean_map + std_map
+  mean_cover_fig = ggplot(std_cover, aes(value)) +
+    geom_density(size=3, color='#d55e00') +
+    scale_x_continuous(breaks=c(0,5,10,15,20,25,30), limits=c(0,30)) +
+    theme_bw() +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.text.x = element_text(color='black',size=12),
+          axis.title.y  = element_text(size=18),
+          axis.title.x  = element_text(size=14),
+          plot.title = element_text(size=21)) +
+    labs(x='Annual Variation in Fractional Cover',y='Density', title=this_ecoregion)
 
-ggsave('./manuscript/avg_cover_figure.png',both,width=45,height=18,units='cm', dpi=150)
+  ggsave(paste0('./manuscript/map_figure/',this_ecoregion,'_std_cover.png'), mean_cover_fig, width=10, height=8, units='cm')
+  
+}
