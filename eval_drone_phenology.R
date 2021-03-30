@@ -93,7 +93,8 @@ all_phenology %>%
 ggplot(aes(x=mesquite_cover_bin, y=percent_meeting_threshold)) + 
   #geom_point(size=5) +
   geom_line(size=2) +
-  scale_x_continuous(breaks=seq(0,1,0.1)) +
+  scale_x_continuous(breaks=seq(0,1,0.1), labels = function(x){paste0(x*100,'%')}) +
+  scale_y_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
   #facet_wrap(~site_id) + 
   theme_bw() +
   theme(legend.position = 'right',
@@ -117,11 +118,13 @@ all_phenology %>%
   mutate(mesquite_cover_bin = round(mesquite,2)) %>%
   group_by(mesquite_cover_bin, metric) %>%
   summarise(mae = mean(abs(doy - true_doy))) %>%
+  ungroup() %>%
+  mutate(metric = factor(metric, levels=c('peak','sos','eos'), labels=c('Peak','SOS','EOS'), ordered = T)) %>%
   ggplot(aes(x=mesquite_cover_bin, y=mae, color=metric)) + 
   geom_line(size=3) +
   scale_color_brewer(palette = 'Dark2') +
   scale_y_continuous(breaks=seq(0,100,20)) + 
-  scale_x_continuous(breaks=seq(0,1,0.1)) +
+  scale_x_continuous(breaks=seq(0,1,0.1), labels = function(x){paste0(x*100,'%')}) +
   coord_cartesian(ylim=c(0,100))  +
   theme_bw(20) + 
   theme(legend.position = c(0.8,0.45),
@@ -134,12 +137,13 @@ all_phenology %>%
 
 #----------------------------------
 # 4 example Nort NDVI curves
-mesquite_cover_to_highlight = c(0.2,0.4, 0.6, 0.8)
+mesquite_cover_to_highlight = c(0.2,0.4, 0.6, 0.8, 0.93)
 
 example_rois = nort_ndvi %>%
   mutate(mesquite_cover = round(mesquite,2)) %>% 
   filter(mesquite_cover %in% mesquite_cover_to_highlight) %>%
-  select(doy, vi=ndvi, roi_id, mesquite_cover) 
+  select(doy, vi=ndvi, roi_id, mesquite_cover) %>%
+  mutate(mesquite_cover = paste0(mesquite_cover*100,'%'))
 
 example_roi_phenology = example_rois %>%
   group_by(roi_id, mesquite_cover) %>%
@@ -152,20 +156,28 @@ example_roi_phenology = example_rois %>%
   ungroup() %>%
   pivot_longer(c(SOS,EOS,Peak), names_to='metric',values_to='doy')
 
+# The number of pixels in this figure
 n_distinct(example_rois$roi_id)
 
-ggplot(example_rois, aes(x=doy, y=vi, group=roi_id, color=as.factor(mesquite_cover))) + 
+# The maximum amplitue seen, which should approximate the canopy VI_veg amplitude.
+nort_ndvi %>% 
+  group_by(roi_id, mesquite) %>% 
+  summarise(ndvi_amplitude = max(ndvi) - min(ndvi)) %>%
+  ungroup() %>%
+  arrange(-ndvi_amplitude)
+
+ggplot(example_rois, aes(x=doy, y=vi, group=roi_id, color=mesquite_cover)) + 
   geom_smooth(method='loess', se=F) +
   geom_point(aes(fill=as.factor(mesquite_cover)),color='black',stroke=1,size=2, shape=21, show.legend = F) +
-  scale_color_viridis_d(end=0.9, option='E') + 
-  scale_fill_viridis_d(end=0.9, option='E') + 
-  ylim(0.05,0.5) +
+  scale_color_viridis_d(end=0.95, option='E') + 
+  scale_fill_viridis_d(end=0.95, option='E') + 
+  #ylim(0.05,0.5) +
   theme_bw(25) +
   theme(legend.position = c(0.9,0.8),
         legend.background = element_rect(color='black'),
         legend.title = element_text(size=18),
         axis.text = element_text(color='black')) +
-  labs(x='Day of Year', y='NDVI', color='ROI Mesquite\nCover') +
+  labs(x='Day of Year', y='NDVI', color='8m pixel\nMesquite Cover') +
   guides(color=guide_legend(reverse = T, override.aes = list(size=4)))
 
 
