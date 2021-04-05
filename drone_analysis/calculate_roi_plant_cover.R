@@ -5,10 +5,12 @@ source('analysis_config.R')
 
 all_roi_cover = tibble()
 
+all_rois = sf::read_sf(random_roi_file)
+
 for(site in jorn_sites){
-  rois = sf::read_sf(random_roi_file) %>%
-    filter(site_id == site)
-  
+  rois = all_rois %>%
+    filter(site_id == site) 
+
   cover_raster_file = case_when(
     site=='P9'    ~ './drone_analysis/data/p9_predicted_cover.tif',
     site=='NORT'  ~ './drone_analysis/data/nort_predicted_cover.tif',
@@ -43,9 +45,16 @@ for(site in jorn_sites){
     bind_rows(cover_values)
 }
 
+
+
+roi_pixel_sizes = rois %>%
+  sf::st_set_geometry(NULL) %>%
+  select(site_id, roi_id, pixel_size)
+
 x = all_roi_cover %>% 
   mutate(percent_cover = round(percent_cover, 3)) %>%
   filter(!is.na(cover_class)) %>%
-  pivot_wider(names_from=cover_class, values_from='percent_cover')
+  pivot_wider(names_from=cover_class, values_from='percent_cover') %>%
+  left_join(roi_pixel_sizes, by=c('roi_id','site_id'))
 
 write_csv(x, random_roi_percent_cover_file)
