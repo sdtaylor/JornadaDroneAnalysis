@@ -9,7 +9,7 @@ library(sf)
 
 
 # ---------------------
-boundaries = sf::st_read('data/gis/site_boundaries.geojson')
+boundaries = sf::st_read('./drone_analysis/data/gis/site_boundaries.geojson')
 source('analysis_config.R')
 source('spatial_helper_functions.R')
 

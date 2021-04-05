@@ -1,6 +1,6 @@
 library(tidyverse)
 library(doParallel)
-source('ndvi_simulation_tools.R')
+source('./simulation_analysis/vi_simulation_tools.R')
 
 # winter ndvi is generally higher than pure soil 
 plant_winter_ndvi = 0.2
@@ -115,4 +115,4 @@ for(cover_i in 1:nrow(cover_values)){
 }
 
 
-write_csv(final_phenology_results, 'data/vi_simulation_results.csv')
+write_csv(final_phenology_results, './simulation_analysis/data/vi_simulation_results.csv')

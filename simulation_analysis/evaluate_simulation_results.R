@@ -1,6 +1,6 @@
 library(tidyverse)
 
-vi_simulation_results = read_csv('data/vi_simulation_results.csv')
+vi_simulation_results = read_csv('./simulation_analysis/data/vi_simulation_results.csv')
 
 #-----
 # axis of variation

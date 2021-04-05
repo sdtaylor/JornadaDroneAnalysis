@@ -1,9 +1,9 @@
 library(tidyverse)
 
 source('analysis_config.R')
-source('ndvi_simulation_tools.R')
+source('./simulation_analysis/vi_simulation_tools.R')
 
-roi_cover = read_csv('data/random_roi_percent_cover.csv') 
+roi_cover = read_csv('./drone_analysis/data/random_roi_percent_cover.csv') 
 
 nort_ndvi = read_csv(random_roi_ndvi_file) %>%
   filter(site_id %in% c('NORT')) %>% 

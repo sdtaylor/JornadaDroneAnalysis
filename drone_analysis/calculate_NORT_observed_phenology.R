@@ -6,7 +6,7 @@ library(tidyverse)
 # the NORT site are provided in the repo for the relavant year.
 # obtained with the following commented code.
 #-------------------------------------------
-library(phenometR)
+#library(phenometR)
 
 # all_pros_glan = get_species_phenophase('PRGL')
 # 
@@ -29,12 +29,12 @@ library(phenometR)
 #   left_join(percent_cover_values, by=c('PHENOPHASE','STATUS')) %>%
 #   rename_with(tolower)
 # 
-# write_csv(nort_2019, 'data/nort_2019_ground_phenology.csv')
+# write_csv(nort_2019, 'drone_analysis/data/nort_2019_ground_phenology.csv')
 #-------------------------------------------
 
 
 # here percent cover is the phenophase "Percentage of leaves green for deciduous shrubs"
-nort_2019 = read_csv('data/nort_2019_ground_phenology.csv')  
+nort_2019 = read_csv('drone_analysis/data/nort_2019_ground_phenology.csv')  
 
 
 

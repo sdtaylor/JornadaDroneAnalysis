@@ -6,13 +6,13 @@ source('analysis_config.R')
 all_roi_cover = tibble()
 
 for(site in jorn_sites){
-  rois = sf::read_sf('data/gis/site_rois_3_final.geojson') %>%
+  rois = sf::read_sf(random_roi_file) %>%
     filter(site_id == site)
   
   cover_raster_file = case_when(
-    site=='P9'    ~ 'data/p9_predicted_cover.tif',
-    site=='NORT'  ~ 'data/nort_predicted_cover.tif',
-    site=='GIBPE' ~ 'data/ibp_predicted_cover.tif'
+    site=='P9'    ~ './drone_analysis/data/p9_predicted_cover.tif',
+    site=='NORT'  ~ './drone_analysis/data/nort_predicted_cover.tif',
+    site=='GIBPE' ~ './drone_analysis/data/ibp_predicted_cover.tif'
   )
   
   cover_categories = tribble(
@@ -48,4 +48,4 @@ x = all_roi_cover %>%
   filter(!is.na(cover_class)) %>%
   pivot_wider(names_from=cover_class, values_from='percent_cover')
 
-write_csv(x, roi_percent_cover_file)
+write_csv(x, random_roi_percent_cover_file)
