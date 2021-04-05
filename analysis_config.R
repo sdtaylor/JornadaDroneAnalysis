@@ -14,8 +14,10 @@ roi_percent_cover_file = 'data/roi_percent_cover.csv'
 
 random_roi_size = 8
 random_rois_per_site = 5000
-random_roi_file = 'data/gis/site_random_rois.geojson'
-random_roi_ndvi_file = 'data/random_roi_ndvi.csv'
+random_roi_file = './drone_analysis/data/gis/site_random_rois.geojson'
+random_roi_ndvi_file = './drone_analysis/data/random_roi_ndvi.csv'
+
+random_roi_percent_cover_file = './drone_analysis/data/random_roi_percent_cover.csv'
 
 # ---------------
 # Site ROI info
