@@ -1,5 +1,7 @@
 library(tidyverse)
 
+#how much each cover class contributes to pixels level NDVI
+
 start_date = '2016-01-01'
 end_date   = '2020-12-31'
 

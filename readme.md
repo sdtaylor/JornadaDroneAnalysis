@@ -1,0 +1,1 @@
+I did a lot of various things in this repo studying drone imagery and vegetation indice simulations. Not all of them ended up in the final analysis but are still usefull. Look in the `unused` folder here for those things.

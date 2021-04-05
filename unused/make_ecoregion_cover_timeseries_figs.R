@@ -1,5 +1,8 @@
 library(tidyverse)
 
+# Original map figure with all the ecoregions had times series figures showing
+# yearly values + variation. It wasn't very high though so I dropped it.
+
 rap_cover = read_csv('data/rap_cover.csv') %>%
   rename(ecoregion = NA_L3NAME) %>%
   filter(ecoregion != 'Chihuahuan Deserts') %>%     # This is a small chunk of the CH desert in AZ. 

@@ -1,0 +1,61 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "site_id": "rd225",
+        "site_type": "meadow"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -107.28921890258789,
+          33.555486653579955
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "site_id": "burntcabin",
+        "site_type": "meadow"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -107.88790941238403,
+          33.4374759219556
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "site_id": "hardcastle",
+        "site_type": "meadow"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -107.87595748901367,
+          33.46767835810215
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "site_id": "cper",
+        "site_type": "grassland"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -104.74822282791138,
+          40.81544944746229
+        ]
+      }
+    }
+  ]
+}
