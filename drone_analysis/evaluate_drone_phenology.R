@@ -3,20 +3,21 @@ library(tidyverse)
 source('analysis_config.R')
 source('./simulation_analysis/vi_simulation_tools.R')
 
-roi_cover = read_csv('./drone_analysis/data/random_roi_percent_cover.csv') 
+roi_cover = read_csv(random_roi_percent_cover_file) 
 
 nort_ndvi = read_csv(random_roi_ndvi_file) %>%
   filter(site_id %in% c('NORT')) %>% 
-  filter(scale %in% c(8)) %>%
   filter(date >= '2019-01-01', date<='2020-01-31') %>%
   mutate(doy = lubridate::yday(date)) %>%
+  rename(pixel_size_check = pixel_size) %>%
   left_join(roi_cover, by=c('roi_id','site_id'))
+
 
 # drop any roi dates where there are >10% NA pixels.
 # this happens to ROI's near the edge of the site when
 # some flight dates have a smaller than normal boundery
 nort_ndvi = nort_ndvi %>%
-  filter(percent_na<0.1)
+  filter(percent_na<0.01)
 
 # remove any ROI's without the full year, these are near
 # the edge of the site and overlapp the bounderies on some dates
@@ -27,17 +28,22 @@ nort_ndvi = nort_ndvi %>%
   group_by(roi_id) %>%
   filter(n() >=7 ) %>%
   ungroup()
-  
-nort_ndvi %>%
-ggplot(aes(x=date, y=ndvi)) +
-  geom_line(aes(color=grass, group=as.factor(roi_id))) +
-  #geom_point() +
-  geom_smooth(se=F, color='red') + 
-  scale_x_date(breaks = unique(nort_ndvi$date)) + 
-  scale_color_viridis_c() + 
-  facet_wrap(site_id~scale, ncol=1) +
-  theme(legend.position = 'none',
-        axis.text.x = element_text(angle=45, hjust=1))
+
+# some quick sanity checks
+if(any(is.na(nort_ndvi$pixel_size))) stop('pixel sizes not lining up in nort_ndvi')
+if(!all(nort_ndvi$pixel_size == nort_ndvi$pixel_size_check)) stop('pixel sizes not lining up in nort_ndvi')
+
+# An exploratory figure
+# nort_ndvi %>%
+# ggplot(aes(x=date, y=ndvi_sd)) +
+#   geom_line(aes(group=as.factor(roi_id))) +
+#   #geom_point() +
+#   geom_smooth(se=F, color='red') +
+#   scale_x_date(breaks = unique(nort_ndvi$date)) +
+#   scale_color_viridis_c() +
+#   facet_wrap(site_id~pixel_size, ncol=1) +
+#   theme(legend.position = 'none',
+#         axis.text.x = element_text(angle=45, hjust=1))
 
 all_phenology = tibble()
 for(this_roi_id in unique(nort_ndvi$roi_id)){
@@ -75,32 +81,40 @@ for(this_roi_id in unique(nort_ndvi$roi_id)){
     bind_rows(phenology)
 }
 
-all_phenology = all_phenology %>%
+pixel_sizes = nort_ndvi %>%
+  distinct(roi_id, pixel_size)
+
+all_phenology2 = all_phenology %>%
+  #left_join(pixel_sizes, by='roi_id') %>%
   left_join(roi_cover, by='roi_id')
 
-all_phenology %>%
-  filter(threshold==0.1) %>%
-  #filter(grass<0.1) %>%
-  #select(-grass) %>% 
-  #pivot_longer(c('soil','total_veg'), names_to='plant',values_to='cover') %>% 
-  #pivot_longer(c('total_veg','soil','mesquite'), names_to='plant',values_to='cover') %>% 
+all_phenology2 %>%
+  filter(threshold %in% c(0.1)) %>%
+  filter(pixel_size %in% c(2,4,8,16)) %>%
   mutate(meets_threshold = qa==0) %>%
   #mutate(cover_bin = ceiling(cover*10*2)/2/10) %>% # round to the nearest 0.05
   mutate(mesquite_cover_bin = round(mesquite,2)) %>%
-  group_by(site_id,mesquite_cover_bin) %>%
+  group_by(site_id,pixel_size,mesquite_cover_bin) %>%
   summarise(percent_meeting_threshold = mean(meets_threshold), n=n()) %>%
   ungroup() %>%
-ggplot(aes(x=mesquite_cover_bin, y=percent_meeting_threshold)) + 
+ggplot(aes(x=mesquite_cover_bin, y=percent_meeting_threshold, color=as.factor(pixel_size))) + 
   #geom_point(size=5) +
-  geom_line(size=2) +
-  scale_x_continuous(breaks=seq(0,1,0.1), labels = function(x){paste0(x*100,'%')}) +
+  geom_line(size=1) +
+  scale_color_manual(values = c('#000000','#e69f00','#56b4e9','#d55e00')) + 
+  scale_x_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
   scale_y_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
-  #facet_wrap(~site_id) + 
   theme_bw() +
-  theme(legend.position = 'right',
+  theme(legend.position = c(0.8,0.5),
+        legend.background = element_rect(color='black'),
+        legend.key.width = unit(20,'mm'),
+        legend.title = element_text(size=18),
+        legend.text = element_text(size=15),
         axis.text = element_text(color='black', size=15),
         axis.title = element_text(size=18)) + 
-  labs(x='Mesquite Fractional Cover', y='Percent of Drone Pixels with\nannual NDVI amplitude > 0.1')
+  labs(x='Mesquite Fractional Cover', 
+       y='Percent of Drone Pixels with\nannual NDVI amplitude > 0.1',
+       color = 'Pixel Size (m)') +
+  guides(color = guide_legend(reverse=T, override.aes = list(size=3)))
 
 #----------------------------------
 # mean average error (MAE) of estimates
@@ -108,41 +122,53 @@ true_phenology = data.frame(sos=104, peak=257, eos=344) %>%
   pivot_longer(everything(), names_to='metric', values_to='true_doy')
 
 
-all_phenology %>%
-  filter(threshold==0.1) %>%
-  select(peak, sos, eos, roi_id, soil, grass, mesquite) %>%
+all_phenology2 %>%
+  filter(threshold %in% c(0.1, 0.25)) %>%
+  filter(pixel_size %in% c(2,4,8,16)) %>%
+  select(peak, sos, eos, roi_id, soil, mesquite, pixel_size, threshold) %>%
   mutate(sos = ifelse(is.infinite(sos), 1, sos),
          eos = ifelse(is.infinite(eos),365, eos)) %>% 
-  pivot_longer(c(peak, sos, eos), names_to='metric', values_to='doy') %>%
+  pivot_longer(c(peak, sos, eos), names_to='metric', values_to='doy') %>% 
   left_join(true_phenology, by='metric') %>%
   mutate(mesquite_cover_bin = round(mesquite,2)) %>%
-  group_by(mesquite_cover_bin, metric) %>%
+  group_by(mesquite_cover_bin, pixel_size, threshold, metric) %>%
   summarise(mae = mean(abs(doy - true_doy))) %>%
   ungroup() %>%
-  mutate(metric = factor(metric, levels=c('peak','sos','eos'), labels=c('Peak','SOS','EOS'), ordered = T)) %>%
-  ggplot(aes(x=mesquite_cover_bin, y=mae, color=metric)) + 
-  geom_line(size=3) +
-  scale_color_brewer(palette = 'Dark2') +
+  mutate(metric = factor(metric, levels=c('sos','peak','eos'), labels=c('SOS','Peak','EOS'), ordered = T)) %>%
+  mutate(threshold = paste0('Percent of max threshold: ',threshold*100,'%')) %>%
+  ggplot(aes(x=mesquite_cover_bin, y=mae, color=as.factor(pixel_size))) + 
+  geom_line(size=1) +
+  scale_color_manual(values = c('#000000','#e69f00','#56b4e9','#d55e00')) + 
   scale_y_continuous(breaks=seq(0,100,20)) + 
-  scale_x_continuous(breaks=seq(0,1,0.1), labels = function(x){paste0(x*100,'%')}) +
+  scale_x_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
   coord_cartesian(ylim=c(0,100))  +
-  theme_bw(20) + 
-  theme(legend.position = c(0.8,0.45),
+  facet_grid(metric~threshold) + 
+  theme_bw() + 
+  theme(legend.position = c(0.35,0.2),
         legend.background = element_rect(color='black'),
-        panel.grid.major = element_line(color='grey50', size=0.4),
-        panel.grid.minor = element_line(color='grey90', size=0.5),
-        axis.text = element_text(color='black')) +
-  labs(x='Mesquite Percent Cover', y='Mean Absolute Error\nof Estimates', color='Metric')
+        legend.key.width = unit(20,'mm'),
+        legend.title = element_text(size=18),
+        legend.text = element_text(size=15),
+        #panel.grid.major = element_line(color='grey50', size=0.4),
+        #panel.grid.minor = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_text(size=14),
+        strip.text.y = element_text(size=18,face='bold'),
+        axis.text = element_text(color='black', size=15),
+        axis.text.x = element_text(size=12),
+        axis.title = element_text(size=18)) +
+  labs(x='Mesquite Fractional Cover', y='Mean Absolute Error of Estimates', color='Pixel Size (m)') +
+  guides(color = guide_legend(reverse=T, override.aes = list(size=3)))
 
 
 #----------------------------------
 # 4 example Nort NDVI curves
-mesquite_cover_to_highlight = c(0.2,0.4, 0.6, 0.8, 0.93)
+mesquite_cover_to_highlight = c(0.2,0.4, 0.6, 0.8)
 
 example_rois = nort_ndvi %>%
   mutate(mesquite_cover = round(mesquite,2)) %>% 
   filter(mesquite_cover %in% mesquite_cover_to_highlight) %>%
-  select(doy, vi=ndvi, roi_id, mesquite_cover) %>%
+  select(doy, vi=ndvi, roi_id, mesquite_cover, pixel_size) %>%
   mutate(mesquite_cover = paste0(mesquite_cover*100,'%'))
 
 example_roi_phenology = example_rois %>%
