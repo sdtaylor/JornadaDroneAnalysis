@@ -4,7 +4,7 @@ library(sf)
 library(patchwork)
 
 
-ecoregions = st_read('./data/us_eco_l3_state_boundaries/us_eco_l3_state_boundaries.shp') %>%
+ecoregions = st_read('./other/data/us_eco_l3_state_boundaries/us_eco_l3_state_boundaries.shp') %>%
   filter(NA_L1CODE == 10) %>%
   filter(NA_L3NAME != 'Chihuahuan Deserts') %>%     # This is a small chunk of the CH desert in AZ. 
   mutate(NA_L3NAME = recode(NA_L3NAME, 'Arizona/New Mexico Plateau'= 'Arizona-NM Plateau',
@@ -15,20 +15,20 @@ ecoregions = st_read('./data/us_eco_l3_state_boundaries/us_eco_l3_state_boundari
   st_union(by_feature = T) %>%
   st_buffer(0.01)
 
-# only north american deserts shapefile for us in qgis
-st_write(ecoregions, './data/gis/desert_ecoregions/NA_Desert_ecoregions.shp')
+# only north american deserts shapefile for use in qgis
+st_write(ecoregions, './other/data/NA_Desert_ecoregions.geojson')
 
 # Create some cropped rasters for use in QGIS
-mean_cover_raster = read_stars('./data/rap_cover/RAP_average_cover_2000-2019.tif')
-std_cover_raster  = read_stars('./data/rap_cover/RAP_std_cover_2000-2019.tif')
+mean_cover_raster = read_stars('./other/data/rap_cover/RAP_average_cover_2000-2019.tif')
+std_cover_raster  = read_stars('./other/data/rap_cover/RAP_std_cover_2000-2019.tif')
 
 ecoregions = st_transform(ecoregions, crs=st_crs(mean_cover_raster))
 
 mean_cover_raster = st_crop(mean_cover_raster, ecoregions)
 std_cover_raster = st_crop(std_cover_raster, ecoregions)
 
-write_stars(mean_cover_raster,'./data/rap_cover/RAP_average_cover_2000-2019_cropped.tif')
-write_stars(std_cover_raster, './data/rap_cover/RAP_std_cover_2000-2019_cropped.tif')
+write_stars(mean_cover_raster,'./other/data/rap_cover/RAP_average_cover_2000-2019_cropped.tif')
+write_stars(std_cover_raster, './other/data/rap_cover/RAP_std_cover_2000-2019_cropped.tif')
 
 
 
