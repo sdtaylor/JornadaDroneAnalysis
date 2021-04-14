@@ -2,14 +2,6 @@ library(tidyverse)
 
 vi_simulation_results = read_csv('./simulation_analysis/data/vi_simulation_results.csv')
 
-#-----
-# axis of variation
-# amplitude
-# error
-# plant cover
-# threshold, 0.1, 0.25, 0.5
-# bootstraps (50)
-
 
 #-----------------------------------
 # percent of time the pixel scale amplitude is > 0.1
@@ -19,14 +11,7 @@ percent_meeting_amplitude_labels = tribble(
   0.01,    0.1,           0.80,         0.25,
   0.01,    0.2,           0.48,         0.4,
   0.01,    0.4,           0.28,         0.5,
-  #0.01,    0.6,           0.2,         0.65,
   0.01,    0.8,           0.12,         0.88,
-  
-#  0.04,    0.1,           0.7,         0.25,
-#  0.04,    0.2,           0.48,         0.4,
-#  0.04,    0.4,           0.28,        0.5,
-#  #0.04,    0.6,           0.2,         0.65,
-#  0.04,    0.8,           0.15,         0.88
 )
 percent_meeting_amplitude_labels$amplitude_label = paste0('VI[veg] == ',percent_meeting_amplitude_labels$amplitude)
 #error_levels = c(0.01,0.04)
@@ -35,7 +20,6 @@ percent_meeting_amplitude_labels$amplitude_label = paste0('VI[veg] == ',percent_
 
 amplitude_colors = viridisLite::viridis(4, end = 0.8)
 
-# Percent of time the 0.1 threshold is met
 percent_meeting_amplitude_data = vi_simulation_results %>%
   group_by(threshold, plant_cover, amplitude, error) %>%
   summarise(percent_meeting_amplitude = 1 - mean(qa),
@@ -43,21 +27,16 @@ percent_meeting_amplitude_data = vi_simulation_results %>%
   ungroup() %>%
   filter(threshold %in% c(0.25)) %>% 
   filter(error %in% c(0.01,0.04)) %>%
-  #mutate(error = factor(error, levels = error_levels, labels=error_labels)) %>%
   mutate(amplitude = round(amplitude,2)) %>%
   filter(amplitude %in% c(0.1, 0.2, 0.4, 0.8))
 
 
 ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
   geom_line(aes(linetype=as.factor(error)),size=2) +
-  #geom_point(size=2) + 
   geom_label(data=percent_meeting_amplitude_labels, label='                    ',color='black', label.size=0.5, size=6) + 
   geom_text(data=percent_meeting_amplitude_labels, aes(label=amplitude_label), parse=T, size=6) + 
   scale_x_continuous(breaks=seq(0,1,0.2),  labels = function(x){paste0(x*100,'%')}) + 
   scale_color_manual(values = amplitude_colors) + 
-  #scale_color_viridis_d() + 
-  #scale_color_brewer(palette='Blues') + 
-  #facet_wrap(~error, labeller = label_value) +
   theme_bw() +
   theme(legend.position = 'bottom',
         legend.background = element_rect(color='black'),
@@ -75,20 +54,6 @@ ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_am
        linetype='Uncertainty (S.D.)')
 
 
-# The difference between the two Fig 2 panels. aka the affect of doubling the error rate
-# this is probably a supplement figure
-percent_meeting_amplitude_data %>%
-  mutate(error = fct_recode(error, 'error01' = 'Error S.D. : 0.01', 'error04' = 'Error S.D. : 0.04')) %>% # rename this factor to something that can be column names
-  pivot_wider(names_from='error', values_from='percent_meeting_amplitude') %>% 
-  group_by(plant_cover, amplitude) %>%
-  summarise(difference = error01 - error04) %>% 
-  ungroup() %>%
-  ggplot(aes(x=plant_cover, y=difference, color=as.factor(round(amplitude,2)))) + 
-  geom_line(size=1.5) +
-  scale_color_viridis_d(end=0.8) +
-  theme_bw() + 
-  labs(y='Difference in Proportion of simulations meeting thresholds\n Error:0.01 - Error:0.04',
-       x='Fractional Vegetation Cover', color=bquote(VI[veg]~'Amplitude'))
 
 #-----------------------------------
 # MAE of estimates figure in relation to frac. cover, error, and amplitude.
@@ -104,17 +69,6 @@ true_phenology_metrics = vi_simulation_results %>%
          eos = ifelse(is.infinite(eos),365, eos)) %>%
   select(threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
 
-# bias_figure_labels = tribble(
-#   ~error, ~amplitude, ~plant_cover, ~percent_meeting_amplitude, 
-#   0.01,    0.1,           0.7,         0.25,
-#   0.01,    0.4,           0.28,         0.5,
-#   0.01,    0.8,           0.15,         0.88,
-#   
-#   0.04,    0.1,           0.7,         0.25,
-#   0.04,    0.4,           0.28,        0.5,
-#   0.04,    0.8,           0.15,         0.88
-# )
-
 vi_simulation_results %>%
   left_join(true_phenology_metrics, by=c('threshold','amplitude')) %>% 
   mutate(sos = ifelse(is.infinite(sos), 1, sos),
@@ -129,17 +83,11 @@ vi_simulation_results %>%
   filter(error %in% c(0.01,0.04)) %>%
   filter(round(amplitude,2) %in% c(0.1,0.2,0.8)) %>% 
   pivot_longer(c(SOS, EOS, Peak), names_to='metric', values_to='metric_values') %>%
-  #mutate(error = factor(error, levels = error_levels, labels=error_labels)) %>%
   mutate(threshold = paste0('Percent of max threshold: ',threshold*100,'%')) %>%
   mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'), ordered = T)) %>% 
   ggplot(aes(x=plant_cover, y = metric_values, color=as.factor(amplitude))) +
-  #geom_line(aes(alpha=as.factor(error)), linetype='dotted', size=3) +
   geom_line(aes(linetype=as.factor(error)), size=1.25) +
-  #scale_alpha_manual(values=c(0,1)) + 
-  #scale_color_viridis_d(end=0.8, labels=c('0.1','0.2','0.4','0.8')) +
   scale_color_manual(values = amplitude_colors[c(1,2,4)], labels=c('0.1','0.2','0.8')) + # 0.4 is dropped here for clarity
-  #scale_linetype_manual(values=c('solid','solid')) + 
-  #scale_size_manual(values = c(1.5,1.5)) + 
   scale_y_continuous(breaks = seq(0,160,20), expand=expansion(mult=0.02)) + 
   scale_x_continuous(breaks=seq(0,1,0.2), expand=expansion(mult=0.05), labels = function(x){paste0(x*100,'%')}) +
   coord_cartesian(ylim=c(0,100)) + 
