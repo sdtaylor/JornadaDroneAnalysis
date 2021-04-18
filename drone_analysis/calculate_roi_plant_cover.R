@@ -12,16 +12,13 @@ for(site in jorn_sites){
     filter(site_id == site) 
 
   cover_raster_file = case_when(
-    site=='P9'    ~ './drone_analysis/data/p9_predicted_cover.tif',
-    site=='NORT'  ~ './drone_analysis/data/nort_predicted_cover.tif',
-    site=='GIBPE' ~ './drone_analysis/data/ibp_predicted_cover.tif'
+    site=='NORT'  ~ './drone_analysis/data/nort_shrub_cover.tif',
   )
   
   cover_categories = tribble(
     ~value, ~cover_class,
-    1,       'soil',
-    2,       'grass',
-    3,       'mesquite'
+    0,       'soil',
+    1,       'mesquite'
   )
   
   cover_raster = raster::raster(cover_raster_file)  
@@ -54,7 +51,7 @@ roi_pixel_sizes = rois %>%
 x = all_roi_cover %>% 
   mutate(percent_cover = round(percent_cover, 3)) %>%
   filter(!is.na(cover_class)) %>%
-  pivot_wider(names_from=cover_class, values_from='percent_cover') %>%
+  pivot_wider(names_from=cover_class, values_from='percent_cover', values_fill=0) %>%
   left_join(roi_pixel_sizes, by=c('roi_id','site_id'))
 
 write_csv(x, random_roi_percent_cover_file)
