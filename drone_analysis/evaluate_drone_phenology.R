@@ -13,11 +13,11 @@ nort_ndvi = read_csv(random_roi_ndvi_file) %>%
   left_join(roi_cover, by=c('roi_id','site_id'))
 
 
-# drop any roi dates where there are >10% NA pixels.
+# drop any roi dates where there are >5% NA pixels.
 # this happens to ROI's near the edge of the site when
 # some flight dates have a smaller than normal boundery
 nort_ndvi = nort_ndvi %>%
-  filter(percent_na<0.01)
+  filter(percent_na<0.05)
 
 # remove any ROI's without the full year, these are near
 # the edge of the site and overlapp the bounderies on some dates
@@ -117,9 +117,12 @@ ggplot(aes(x=mesquite_cover_bin, y=percent_meeting_threshold, color=as.factor(pi
   guides(color = guide_legend(reverse=T, override.aes = list(size=3)))
 
 #----------------------------------
-# mean average error (MAE) of estimates
-true_phenology = data.frame(sos=104, peak=257, eos=344) %>%
-  pivot_longer(everything(), names_to='metric', values_to='true_doy')
+# mean average error (MAE) of estimates. from calculate_NORT_observed_phenology.R
+true_phenology = tribble(
+  ~sos, ~peak, ~eos, ~threshold,
+  108,  257,   327,  0.25,
+  104,  257,   344,  0.10) %>%
+  pivot_longer(-threshold, names_to='metric', values_to='true_doy')
 
 
 all_phenology2 %>%
@@ -129,11 +132,11 @@ all_phenology2 %>%
   mutate(sos = ifelse(is.infinite(sos), 1, sos),
          eos = ifelse(is.infinite(eos),365, eos)) %>% 
   pivot_longer(c(peak, sos, eos), names_to='metric', values_to='doy') %>% 
-  left_join(true_phenology, by='metric') %>%
+  left_join(true_phenology, by=c('metric','threshold')) %>%
   mutate(mesquite_cover_bin = round(mesquite,2)) %>%
   group_by(mesquite_cover_bin, pixel_size, threshold, metric) %>%
   summarise(mae = mean(abs(doy - true_doy))) %>%
-  ungroup() %>%
+  ungroup() %>% 
   mutate(metric = factor(metric, levels=c('sos','peak','eos'), labels=c('SOS','Peak','EOS'), ordered = T)) %>%
   mutate(threshold = paste0('Percent of max threshold: ',threshold*100,'%')) %>%
   ggplot(aes(x=mesquite_cover_bin, y=mae, color=as.factor(pixel_size))) + 
@@ -144,7 +147,7 @@ all_phenology2 %>%
   coord_cartesian(ylim=c(0,100))  +
   facet_grid(metric~threshold) + 
   theme_bw() + 
-  theme(legend.position = c(0.35,0.2),
+  theme(legend.position = c(0.35,0.22),
         legend.background = element_rect(color='black'),
         legend.key.width = unit(20,'mm'),
         legend.title = element_text(size=18),
@@ -152,10 +155,10 @@ all_phenology2 %>%
         #panel.grid.major = element_line(color='grey50', size=0.4),
         #panel.grid.minor = element_blank(),
         strip.background = element_blank(),
-        strip.text.x = element_text(size=14),
+        strip.text.x = element_text(size=16),
         strip.text.y = element_text(size=18,face='bold'),
         axis.text = element_text(color='black', size=15),
-        axis.text.x = element_text(size=12),
+        axis.text.x = element_text(size=14),
         axis.title = element_text(size=18)) +
   labs(x='Mesquite Fractional Cover', y='Mean Absolute Error of Estimates', color='Pixel Size (m)') +
   guides(color = guide_legend(reverse=T, override.aes = list(size=3)))

@@ -42,22 +42,29 @@ nort_2019 = read_csv('drone_analysis/data/nort_2019_ground_phenology.csv')
 # extract phenology
 #------
 
-threshold = 10 # equal 10% green lvs since the scale here is 0-100%
+thresholds = c(10,25) # equal 10% green lvs since the scale here is 0-100%
 full_year = data.frame(doy = 1:365)
-full_year$smoothed_percent_green_lvs = predict(smooth.spline(x=nort_2019$doy,y=nort_2019$percent_cover), x=full_year$doy)$y
+full_year$smoothed_percent_green_lvs = predict(smooth.spline(x=nort_2019$doy,y=nort_2019$percent_cover, cv=T), x=full_year$doy)$y
 
 # make sure the smoothed line doesn't drop below 0%
 full_year$smoothed_percent_green_lvs = pmax(0, full_year$smoothed_percent_green_lvs)
 
 peak = full_year$doy[which.max(full_year$smoothed_percent_green_lvs)]
-# onset is the day where the curve crosses the threshold the final time before increasing to the peak
-sos = max(full_year$doy[full_year$doy < peak & full_year$smoothed_percent_green_lvs <= threshold])
-# end is the day where the  curve crosses the threshold the first time while decreasing from the peak.
-eos = min(full_year$doy[full_year$doy > peak & full_year$smoothed_percent_green_lvs <= threshold])
 
+nort_true_phenology = tibble()
 
-nort_true_phenology = data.frame(sos, peak, eos) %>%
-  pivot_longer(everything(), names_to='metric', values_to='doy')
+for(t in thresholds){
+  # onset is the day where the curve crosses the threshold the final time before increasing to the peak
+  sos = max(full_year$doy[full_year$doy < peak & full_year$smoothed_percent_green_lvs <= t])
+  # end is the day where the  curve crosses the threshold the first time while decreasing from the peak.
+  eos = min(full_year$doy[full_year$doy > peak & full_year$smoothed_percent_green_lvs <= t])
+  
+  nort_true_phenology = tibble(sos, peak, eos, threshold=t) %>%
+    bind_rows(nort_true_phenology)
+}
+
+nort_true_phenology = nort_true_phenology %>%
+  pivot_longer(-threshold, names_to='metric', values_to='doy')
 
 #----------
 # nice figure to summarize
@@ -69,7 +76,8 @@ ggplot(nort_2019, aes(x=doy, y=percent_cover)) +
   geom_line(data=full_year, aes(y=smoothed_percent_green_lvs), color='#009e73', size=2) +
   geom_vline(data=nort_true_phenology, aes(xintercept=doy, color=metric), size=2) +
   scale_y_continuous(breaks = seq(0,100,10)) + 
-  scale_color_manual(values=c('#e69f00','#0072b2','#e69f00'))
+  #scale_color_manual(values=c('#e69f00','#0072b2','#e69f00')) +
+  theme()
 
 
 #------------
