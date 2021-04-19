@@ -165,48 +165,49 @@ all_phenology2 %>%
 
 
 #----------------------------------
-# 4 example Nort NDVI curves
+# Supplemental Figure showing examples of different UAV  pixl annual curves.
 mesquite_cover_to_highlight = c(0.2,0.4, 0.6, 0.8)
 
 example_rois = nort_ndvi %>%
+  filter(pixel_size %in% c(2,4,8,16)) %>%
   mutate(mesquite_cover = round(mesquite,2)) %>% 
   filter(mesquite_cover %in% mesquite_cover_to_highlight) %>%
   select(doy, vi=ndvi, roi_id, mesquite_cover, pixel_size) %>%
   mutate(mesquite_cover = paste0(mesquite_cover*100,'%'))
 
-example_roi_phenology = example_rois %>%
-  group_by(roi_id, mesquite_cover) %>%
-  summarise(extract_phenology(., percent_threshold = c(0.1))) %>%
-  ungroup() %>%
-  group_by(mesquite_cover) %>%
-  summarise(SOS = mean(sos),
-            EOS = mean(eos),
-            Peak = mean(peak)) %>%
-  ungroup() %>%
-  pivot_longer(c(SOS,EOS,Peak), names_to='metric',values_to='doy')
+# example_roi_phenology = example_rois %>%
+#   group_by(roi_id, mesquite_cover) %>%
+#   summarise(extract_phenology(., percent_threshold = c(0.1))) %>%
+#   ungroup() %>%
+#   group_by(mesquite_cover) %>%
+#   summarise(SOS = mean(sos),
+#             EOS = mean(eos),
+#             Peak = mean(peak)) %>%
+#   ungroup() %>%
+#   pivot_longer(c(SOS,EOS,Peak), names_to='metric',values_to='doy')
 
 # The number of pixels in this figure
 n_distinct(example_rois$roi_id)
 
 # The maximum amplitue seen, which should approximate the canopy VI_veg amplitude.
 nort_ndvi %>% 
-  group_by(roi_id, mesquite) %>% 
+  group_by(roi_id, mesquite, pixel_size) %>% 
   summarise(ndvi_amplitude = max(ndvi) - min(ndvi)) %>%
   ungroup() %>%
   arrange(-ndvi_amplitude)
 
-ggplot(example_rois, aes(x=doy, y=vi, group=roi_id, color=mesquite_cover)) + 
+colors = c('#d8b365','#8c510a','#80cdc1','#003c30')
+
+ggplot(example_rois, aes(x=doy, y=vi, color=as.factor(mesquite_cover), group=roi_id)) + 
   geom_smooth(method='loess', se=F) +
   geom_point(aes(fill=as.factor(mesquite_cover)),color='black',stroke=1,size=2, shape=21, show.legend = F) +
-  scale_color_viridis_d(end=0.95, option='E') + 
-  scale_fill_viridis_d(end=0.95, option='E') + 
-  #ylim(0.05,0.5) +
+  scale_color_manual(values = colors) + 
+  scale_fill_manual(values = colors) + 
+  facet_wrap(~pixel_size, labeller = label_both) +
   theme_bw(25) +
-  theme(legend.position = c(0.9,0.8),
+  theme(legend.position = 'right',
         legend.background = element_rect(color='black'),
         legend.title = element_text(size=18),
         axis.text = element_text(color='black')) +
-  labs(x='Day of Year', y='NDVI', color='8m pixel\nMesquite Cover') +
+  labs(x='Day of Year', y='NDVI', color='Mesquite Fractional\nCover') +
   guides(color=guide_legend(reverse = T, override.aes = list(size=4)))
-
-
