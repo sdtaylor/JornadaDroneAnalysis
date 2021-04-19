@@ -198,12 +198,15 @@ nort_ndvi %>%
 
 colors = c('#d8b365','#8c510a','#80cdc1','#003c30')
 
-ggplot(example_rois, aes(x=doy, y=vi, color=as.factor(mesquite_cover), group=roi_id)) + 
+example_rois %>%
+  mutate(pixel_size_label = paste0('Pixel Size: ',pixel_size,'m')) %>% 
+  mutate(pixel_size_label = fct_reorder(pixel_size_label, pixel_size)) %>%
+ggplot(aes(x=doy, y=vi, color=as.factor(mesquite_cover), group=roi_id)) + 
   geom_smooth(method='loess', se=F) +
   geom_point(aes(fill=as.factor(mesquite_cover)),color='black',stroke=1,size=2, shape=21, show.legend = F) +
   scale_color_manual(values = colors) + 
   scale_fill_manual(values = colors) + 
-  facet_wrap(~pixel_size, labeller = label_both) +
+  facet_wrap(~pixel_size_label) +
   theme_bw(25) +
   theme(legend.position = 'right',
         legend.background = element_rect(color='black'),
