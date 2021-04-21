@@ -6,7 +6,7 @@ source('./simulation_analysis/vi_simulation_tools.R')
 plant_winter_ndvi = 0.2
 soil_ndvi = 0.2
 
-n_bootstraps = 100
+n_bootstraps = 200
 
 error_rates = c(0, 0.01, 0.04)
 # error_rates = c(0.02)
