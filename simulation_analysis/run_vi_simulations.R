@@ -6,14 +6,14 @@ source('./simulation_analysis/vi_simulation_tools.R')
 plant_winter_ndvi = 0.2
 soil_ndvi = 0.2
 
-n_bootstraps = 200
+n_bootstraps = 100
 
-error_rates = c(0, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1)
+error_rates = c(0, 0.01, 0.04)
 # error_rates = c(0.02)
 
 # These are values for the m2 parameter in the elmore function and correspond to 
-# final amplitudes of c(0.1,  0.2,  0.3,   0.4    0.5,   0.6,  0.7,  0.8)
-amplitude_rates =    c(0.18, 0.285, 0.387, 0.488, 0.588, 0.69, 0.79, 0.89)
+# final amplitudes of c(0.1,  0.2,  0.4,    0.8)
+amplitude_rates =    c(0.18, 0.285,  0.488, 0.89)
 ###############
 # generate all combinations of soil/plant cover
 cover_step = 2
@@ -90,6 +90,14 @@ for(cover_i in 1:nrow(cover_values)){
             
             # add measurment error
             scaled_ndvi$vi = scaled_ndvi$vi + rnorm(nrow(scaled_ndvi), mean=0, sd= error)
+            
+            # maximum value composition. MODIS 8-day NDVI takes the max value
+            # # within any 8 day window as a noise reduction method.
+            # If enabling this chagen `doy = seq(-60,450,8)`` above to `doy = seq(-60,450,1)``
+            # scaled_ndvi$vi_max = zoo::rollmax(scaled_ndvi$vi, k=8, fill=NA)
+            # 
+            # scaled_ndvi = scaled_ndvi %>%
+            #   filter(doy %in% seq(-60,450,8))
             
             # debugging call to make a plot of everything
             #extract_phenology(scaled_ndvi, to_return = 'plot')
