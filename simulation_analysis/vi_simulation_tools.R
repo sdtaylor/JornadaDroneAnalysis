@@ -25,7 +25,7 @@ extract_phenology = function(df,
   # print(head(df,1))
   qa = 0
   df = arrange(df, doy)
-  full_year = data.frame(doy = 1:450)
+  full_year = data.frame(doy = -90:455)
   #smoothed_points = predict(loess(vi ~ doy, span=loess_span, data=df), newdata = full_year)
   smoothed_points = predict(smooth.spline(df$doy, df$vi), x = full_year$doy)$y
   smoothed_points = smoothed_points[!is.na(smoothed_points)]
