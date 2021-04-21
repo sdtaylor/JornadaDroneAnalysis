@@ -60,19 +60,22 @@ ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_am
 #-----------------------------------
 
 # The "true" sos/eos dates are obtained with 100%  veg cover and 0 error
-# note they will change slightly w/ amplitude
+# note they will change slightly w/ amplitude.
+# For low amplitude data it's not uncommon (<5% of runs) to have estimates of infinity
+# due to very poor fit of the smoothing spline. In these cases set the estimate to the outer
+# bounds, which can exceed the day of year bounds of 1-365 by going into the preceeding or following years.
 true_phenology_metrics = vi_simulation_results %>% 
   filter(error == 0, plant_cover==1) %>% 
   select(-bootstrap) %>% 
   distinct() %>%
-  mutate(sos = ifelse(is.infinite(sos), 1, sos),
-         eos = ifelse(is.infinite(eos),365, eos)) %>%
+  mutate(sos = ifelse(is.infinite(sos), -90, sos),
+         eos = ifelse(is.infinite(eos),455, eos)) %>%
   select(threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
 
 vi_simulation_results %>%
   left_join(true_phenology_metrics, by=c('threshold','amplitude')) %>% 
-  mutate(sos = ifelse(is.infinite(sos), 1, sos),
-         eos = ifelse(is.infinite(eos),365, eos)) %>%
+  mutate(sos = ifelse(is.infinite(sos), -90, sos),
+         eos = ifelse(is.infinite(eos),455, eos)) %>%
   group_by(threshold, plant_cover, amplitude, error) %>%
   summarise(SOS = mean(abs(sos-sos_true)),
             EOS = mean(abs(eos-eos_true)),
