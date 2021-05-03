@@ -53,9 +53,23 @@ extract_phenology = function(df,
                       data.frame(peak = peak, sos = sos, 
                                  eos = eos, season_length = season_length,
                                  threshold = threshold,
+                                 method = 'percent_max_threshold',
                                  qa = qa))
     
   }
+  
+  # Using the maximum rate of change method
+  first_derivative = c(0,diff(scaled_vi))
+  sos = full_year$doy[which.max(first_derivative)]
+  eos = full_year$doy[which.min(first_derivative)]
+  season_length = eos - sos
+  
+  phenology_df = rbind(phenology_df,
+                       data.frame(peak = peak, sos = sos, 
+                                  eos = eos, season_length = season_length,
+                                  threshold = NA,
+                                  method = 'max_change_rate',
+                                  qa = qa))
   
   if(to_return == 'plot'){
     # return a diagnostic plot with all original points, the smooth line, and resulting phenology
@@ -65,13 +79,14 @@ extract_phenology = function(df,
     x$smoothed_points = smoothed_points
     
     phenology_df_long = phenology_df %>%
-      pivot_longer(c(peak, sos, eos, season_length), names_to = 'metric', values_to='doy')
+      pivot_longer(c(peak, sos, eos), names_to = 'metric', values_to='doy')
     
     p = ggplot(x, aes(x=doy)) + 
       geom_point(aes(y=vi)) + 
       geom_line(aes(y=smoothed_points)) +
       geom_hline(yintercept = min(smoothed_points) + 0.1, linetype='dotted') +
-      geom_vline(data = phenology_df_long, aes(xintercept=doy, color=metric))
+      geom_vline(data = phenology_df_long, aes(xintercept=doy, color=interaction(method)), size=1) +
+      scale_color_brewer(palette = 'Dark2')
     
     return(p)
   } else if(to_return == 'df'){

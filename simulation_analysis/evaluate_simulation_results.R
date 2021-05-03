@@ -21,6 +21,7 @@ percent_meeting_amplitude_labels$amplitude_label = paste0('VI[veg] == ',percent_
 amplitude_colors = viridisLite::viridis(4, end = 0.8)
 
 percent_meeting_amplitude_data = vi_simulation_results %>%
+  filter(method == 'percent_max_threshold') %>%
   group_by(threshold, plant_cover, amplitude, error) %>%
   summarise(percent_meeting_amplitude = 1 - mean(qa),
             n=n()) %>%
@@ -70,10 +71,12 @@ true_phenology_metrics = vi_simulation_results %>%
   distinct() %>%
   mutate(sos = ifelse(is.infinite(sos), -90, sos),
          eos = ifelse(is.infinite(eos),455, eos)) %>%
-  select(threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
+  select(method, threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
 
 vi_simulation_results %>%
-  left_join(true_phenology_metrics, by=c('threshold','amplitude')) %>% 
+  #filter(method == 'percent_max_threshold') %>%
+  filter(method == 'max_change_rate') %>%
+  left_join(true_phenology_metrics, by=c('threshold','amplitude','method')) %>% 
   mutate(sos = ifelse(is.infinite(sos), -90, sos),
          eos = ifelse(is.infinite(eos),455, eos)) %>%
   group_by(threshold, plant_cover, amplitude, error) %>%
@@ -81,11 +84,11 @@ vi_simulation_results %>%
             EOS = mean(abs(eos-eos_true)),
             Peak = mean(abs(peak - peak_true)),
             n=n()) %>%
-  ungroup() %>%
-  filter(threshold %in% c(0.1, 0.25)) %>% 
+  ungroup() %>% 
+  #filter(threshold %in% c(0.1, 0.25)) %>% 
   filter(error %in% c(0.01,0.04)) %>%
   filter(round(amplitude,2) %in% c(0.1,0.2,0.8)) %>% 
-  pivot_longer(c(SOS, EOS, Peak), names_to='metric', values_to='metric_values') %>%
+  pivot_longer(c(SOS, EOS, Peak), names_to='metric', values_to='metric_values') %>% 
   mutate(threshold = paste0('Percent of max threshold: ',threshold*100,'%')) %>%
   mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'), ordered = T)) %>% 
   ggplot(aes(x=plant_cover, y = metric_values, color=as.factor(amplitude))) +
@@ -94,7 +97,8 @@ vi_simulation_results %>%
   scale_y_continuous(breaks = seq(0,160,20), expand=expansion(mult=0.02)) + 
   scale_x_continuous(breaks=seq(0,1,0.2), expand=expansion(mult=0.05), labels = function(x){paste0(x*100,'%')}) +
   coord_cartesian(ylim=c(0,100)) + 
-  facet_grid(metric~threshold) + 
+  #facet_grid(metric~threshold) + 
+  facet_grid(metric~.) + 
   theme_bw(15) +
   theme(legend.position = 'bottom',
         legend.box = 'horizontal',
