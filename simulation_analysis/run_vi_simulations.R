@@ -54,7 +54,9 @@ for(cover_i in 1:nrow(cover_values)){
       iteration_reslts = foreach(i=1:n_bootstraps, .combine = rbind,
                                  .packages = c('dplyr','tidyr')) %dopar% {
       #for(i in 1:n_bootstraps){
-            doy = seq(-60,450,8)
+            # Dormant season VI values are "stretched" well beyond the annual bounds. This is so the
+            # smoothing algorithm does not have any hard spikes at the begining and end.
+            doy = seq(-100,500,8)
             
             df = tibble(doy = doy)
             # double logistic values to produce, with 0.1 threshold
