@@ -59,9 +59,19 @@ extract_phenology = function(df,
   }
   
   # Using the maximum rate of change method
-  first_derivative = c(0,diff(scaled_vi))
-  sos = full_year$doy[which.max(first_derivative)]
-  eos = full_year$doy[which.min(first_derivative)]
+  full_year$first_derivative = c(0,diff(scaled_vi))
+  sos = full_year %>%
+    filter(doy<peak) %>%
+    filter(first_derivative==max(first_derivative)) %>%
+    pull(doy)
+  eos = full_year %>%
+    filter(doy>peak) %>%
+    filter(first_derivative==min(first_derivative)) %>%
+    pull(doy)
+  if(length(sos)!=1) stop('max change rate sos failed')
+  if(length(eos)!=1) stop('max change rate eos failed')
+  #sos = full_year$doy[which.max(first_derivative)]
+  #eos = full_year$doy[which.min(first_derivative)]
   season_length = eos - sos
   
   phenology_df = rbind(phenology_df,
