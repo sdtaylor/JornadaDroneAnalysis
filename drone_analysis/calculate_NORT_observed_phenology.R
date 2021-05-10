@@ -59,12 +59,22 @@ for(t in thresholds){
   # end is the day where the  curve crosses the threshold the first time while decreasing from the peak.
   eos = min(full_year$doy[full_year$doy > peak & full_year$smoothed_percent_green_lvs <= t])
   
-  nort_true_phenology = tibble(sos, peak, eos, threshold=t) %>%
+  nort_true_phenology = tibble(sos, peak, eos, threshold=t, method='percent_max_threshold') %>%
     bind_rows(nort_true_phenology)
 }
 
+# max change rate method
+full_year$smoothed_1st_derivative = c(NA,diff(full_year$smoothed_percent_green_lvs))
+sos = full_year$doy[which.max(full_year$smoothed_1st_derivative)]
+eos = full_year$doy[which.min(full_year$smoothed_1st_derivative)]
+
+nort_true_phenology = tibble(sos, peak, eos, threshold=NA, method='max_change_rate') %>%
+  bind_rows(nort_true_phenology)
+
+#--------------
+# combine
 nort_true_phenology = nort_true_phenology %>%
-  pivot_longer(-threshold, names_to='metric', values_to='doy')
+  pivot_longer(c(-threshold,-method), names_to='metric', values_to='doy')
 
 #----------
 # nice figure to summarize
