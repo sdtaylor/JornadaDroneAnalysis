@@ -68,8 +68,22 @@ extract_phenology = function(df,
     filter(doy>peak) %>%
     filter(first_derivative==min(first_derivative)) %>%
     pull(doy)
-  if(length(sos)!=1) stop('max change rate sos failed')
-  if(length(eos)!=1) stop('max change rate eos failed')
+  # if this failed due to poor fit of the smoothing line
+  # use the bounds as estimates to maximize the error.
+  if(length(sos)==0) {
+    print('sos estimate failed')
+    sos = min(full_year$doy)
+  } else if(length(sos)>1){
+    print('>1 sos estimate')
+    sos = min(full_year$doy)
+  }
+  if(length(eos)==0) {
+    print('eos estimate failed')
+    eos = max(full_year$doy)
+  } else if(length(eos)>1){
+    print('>1 eos estimate')
+    eos = max(full_year$doy)
+  }
   #sos = full_year$doy[which.max(first_derivative)]
   #eos = full_year$doy[which.min(first_derivative)]
   season_length = eos - sos
