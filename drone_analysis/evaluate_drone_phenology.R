@@ -73,7 +73,7 @@ for(this_roi_id in unique(nort_ndvi$roi_id)){
   
   # get phenology
   phenology = extract_phenology(select(roi_ndvi, doy, vi = ndvi))
-  extract_phenology(select(roi_ndvi, doy, vi = ndvi), percent_threshold=c(0.1), to_return='plot')
+  #extract_phenology(select(roi_ndvi, doy, vi = ndvi), percent_threshold=c(0.1), to_return='plot')
   
   phenology$roi_id = this_roi_id
  
@@ -119,33 +119,36 @@ ggplot(aes(x=mesquite_cover_bin, y=percent_meeting_threshold, color=as.factor(pi
 #----------------------------------
 # mean average error (MAE) of estimates. from calculate_NORT_observed_phenology.R
 true_phenology = tribble(
-  ~sos, ~peak, ~eos, ~threshold,
-  108,  257,   327,  0.25,
-  104,  257,   344,  0.10) %>%
-  pivot_longer(-threshold, names_to='metric', values_to='true_doy')
+  ~sos, ~peak, ~eos, ~threshold, ~method,
+  108,  241,   314,  NA,         'max_change_rate',
+  109,  241,   328,  0.25,       'percent_max_threshold',
+  102,  241,   345,  0.10,       'percent_max_threshold') %>%
+  pivot_longer(c(-threshold,-method), names_to='metric', values_to='true_doy')
 
+method_levels = c('percent_max_threshold','max_change_rate')
+method_labels = c('10% of relative max','Maximum rate of change')
 
 all_phenology2 %>%
-  filter(threshold %in% c(0.1, 0.25)) %>%
+  filter(threshold %in% c(0.1, NA)) %>%
   filter(pixel_size %in% c(2,4,8,16)) %>%
-  select(peak, sos, eos, roi_id, soil, mesquite, pixel_size, threshold) %>%
+  select(peak, sos, eos, roi_id, soil, mesquite, pixel_size, threshold, method) %>%
   mutate(sos = ifelse(is.infinite(sos), 1, sos),
          eos = ifelse(is.infinite(eos),365, eos)) %>% 
   pivot_longer(c(peak, sos, eos), names_to='metric', values_to='doy') %>% 
-  left_join(true_phenology, by=c('metric','threshold')) %>%
+  left_join(true_phenology, by=c('method','metric','threshold')) %>%
   mutate(mesquite_cover_bin = round(mesquite,2)) %>%
-  group_by(mesquite_cover_bin, pixel_size, threshold, metric) %>%
+  group_by(mesquite_cover_bin, pixel_size, threshold, method, metric) %>%
   summarise(mae = mean(abs(doy - true_doy))) %>%
   ungroup() %>% 
   mutate(metric = factor(metric, levels=c('sos','peak','eos'), labels=c('SOS','Peak','EOS'), ordered = T)) %>%
-  mutate(threshold = paste0('Percent of max threshold: ',threshold*100,'%')) %>%
+  mutate(method = factor(method, levels = method_levels, labels=method_labels)) %>%
   ggplot(aes(x=mesquite_cover_bin, y=mae, color=as.factor(pixel_size))) + 
   geom_line(size=1) +
   scale_color_manual(values = c('#000000','#e69f00','#56b4e9','#d55e00')) + 
   scale_y_continuous(breaks=seq(0,100,20)) + 
   scale_x_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
   coord_cartesian(ylim=c(0,100))  +
-  facet_grid(metric~threshold) + 
+  facet_grid(metric~method) + 
   theme_bw() + 
   theme(legend.position = c(0.35,0.22),
         legend.background = element_rect(color='black'),
