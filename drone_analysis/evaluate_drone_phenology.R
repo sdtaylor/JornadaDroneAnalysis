@@ -88,7 +88,7 @@ all_phenology2 = all_phenology %>%
   #left_join(pixel_sizes, by='roi_id') %>%
   left_join(roi_cover, by='roi_id')
 
-all_phenology2 %>%
+fig4_drone_detectability = all_phenology2 %>%
   filter(threshold %in% c(0.1)) %>%
   filter(pixel_size %in% c(2,4,8,16)) %>%
   mutate(meets_threshold = qa==0) %>%
@@ -116,6 +116,8 @@ ggplot(aes(x=mesquite_cover_bin, y=percent_meeting_threshold, color=as.factor(pi
        color = 'Pixel Size (m)') +
   guides(color = guide_legend(reverse=T, override.aes = list(size=3)))
 
+ggsave('./manuscript/fig4_drone_detectability.png', fig4_drone_detectability, width=16, height=14, units = 'cm', dpi=200)
+
 #----------------------------------
 # mean average error (MAE) of estimates. from calculate_NORT_observed_phenology.R
 true_phenology = tribble(
@@ -128,7 +130,7 @@ true_phenology = tribble(
 method_levels = c('percent_max_threshold','max_change_rate')
 method_labels = c('10% of relative max','Maximum rate of change')
 
-all_phenology2 %>%
+fig5_drone_mae = all_phenology2 %>%
   filter(threshold %in% c(0.1, NA)) %>%
   filter(pixel_size %in% c(2,4,8,16)) %>%
   select(peak, sos, eos, roi_id, soil, mesquite, pixel_size, threshold, method) %>%
@@ -143,7 +145,7 @@ all_phenology2 %>%
   mutate(metric = factor(metric, levels=c('sos','peak','eos'), labels=c('SOS','Peak','EOS'), ordered = T)) %>%
   mutate(method = factor(method, levels = method_levels, labels=method_labels)) %>%
   ggplot(aes(x=mesquite_cover_bin, y=mae, color=as.factor(pixel_size))) + 
-  geom_line(size=1) +
+  geom_line(size=2) +
   scale_color_manual(values = c('#000000','#e69f00','#56b4e9','#d55e00')) + 
   scale_y_continuous(breaks=seq(0,100,20)) + 
   scale_x_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
@@ -166,6 +168,7 @@ all_phenology2 %>%
   labs(x='Mesquite Fractional Cover', y='Mean Absolute Error of Estimates', color='Pixel Size (m)') +
   guides(color = guide_legend(reverse=T, override.aes = list(size=3)))
 
+ggsave('./manuscript/fig5_drone_mae.png', fig5_drone_mae, width=22, height=24, units = 'cm', dpi=200)
 
 #----------------------------------
 # Supplemental Figure showing examples of different UAV  pixl annual curves.
@@ -201,7 +204,7 @@ nort_ndvi %>%
 
 colors = c('#d8b365','#8c510a','#80cdc1','#003c30')
 
-example_rois %>%
+figS3_drone_ndvi_example = example_rois %>%
   mutate(pixel_size_label = paste0('Pixel Size: ',pixel_size,'m')) %>% 
   mutate(pixel_size_label = fct_reorder(pixel_size_label, pixel_size)) %>%
 ggplot(aes(x=doy, y=vi, color=as.factor(mesquite_cover), group=roi_id)) + 
@@ -217,3 +220,6 @@ ggplot(aes(x=doy, y=vi, color=as.factor(mesquite_cover), group=roi_id)) +
         axis.text = element_text(color='black')) +
   labs(x='Day of Year', y='NDVI', color='Mesquite Fractional\nCover') +
   guides(color=guide_legend(reverse = T, override.aes = list(size=4)))
+
+ggsave('./manuscript/figS3_drone_ndvi_example.png', figS3_drone_ndvi_example, width=28, height=20, units = 'cm', dpi=200)
+

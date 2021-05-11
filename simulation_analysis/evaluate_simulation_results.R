@@ -32,7 +32,7 @@ percent_meeting_amplitude_data = vi_simulation_results %>%
   filter(amplitude %in% c(0.1, 0.2, 0.4, 0.8))
 
 
-ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
+fig2_sim_detectability = ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
   geom_line(aes(linetype=as.factor(error)),size=2) +
   geom_label(data=percent_meeting_amplitude_labels, label='                    ',color='black', label.size=0.5, size=6) + 
   geom_text(data=percent_meeting_amplitude_labels, aes(label=amplitude_label), parse=T, size=6) + 
@@ -54,6 +54,7 @@ ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_am
   labs(x='Fractional Vegetation Cover',y=bquote(atop('Proportion of simulations where',VI[pixel]~' amplitude > 0.1')),
        linetype='Uncertainty (S.D.)')
 
+ggsave('./manuscript/fig2_sim_detectability.png', fig2_sim_detectability, width=18, height=16, units = 'cm', dpi=200)
 
 
 #-----------------------------------
@@ -76,7 +77,7 @@ true_phenology_metrics = vi_simulation_results %>%
 method_levels = c('percent_max_threshold','max_change_rate')
 method_labels = c('10% of relative max','Maximum rate of change')
 
-vi_simulation_results %>%
+fig3_sim_mae = vi_simulation_results %>%
   filter(eos > peak) %>%
   #filter(method == 'percent_max_threshold') %>%
   #filter(method == 'max_change_rate') %>%
@@ -129,3 +130,4 @@ vi_simulation_results %>%
                                   title.theme = element_text(size=14, hjust=0.5),
                                   label.theme = element_text(size=12)))
 
+ggsave('./manuscript/fig3_sim_mae.png', fig3_sim_mae, width=20, height=24, units = 'cm', dpi=200)
