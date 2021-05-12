@@ -74,13 +74,13 @@ summarized_phenology = estimated_phenology %>%
 
 amplitude_colors = c('#000000','#0072b2','#e69f00')
 
-estimated_curves %>%
+fig8_sos_uncertainty = estimated_curves %>%
   group_by(amplitude, doy) %>%
   summarise(vi_mean = mean(smoothed_vi),
             vi_sd   = sd(smoothed_vi)) %>%
   ungroup() %>%
   ggplot(aes(x=doy, y=vi_mean, color=as.factor(amplitude))) + 
-  annotate('rect', xmin = 56, xmax = 115, ymin = 0.61, ymax=0.87, size=0.5, linetype='dotted', color='black', fill='white', alpha=0.5) + 
+  annotate('rect', xmin = 50, xmax = 120, ymin = 0.61, ymax=0.87, size=0.5, linetype='dotted', color='black', fill='white', alpha=0.5) + 
   geom_ribbon(aes(ymin = vi_mean-vi_sd*1.96,
                   ymax = vi_mean+vi_sd*1.96,
                   fill = as.factor(amplitude)),
@@ -96,14 +96,15 @@ estimated_curves %>%
              size=3) + 
   scale_color_manual(values=amplitude_colors) + 
   scale_fill_manual(values=amplitude_colors) + 
-  annotate('text', x=85, y=0.83, label='95% Confidence Interval\nfor Start of Season', size=5, fontface='bold') + 
-  annotate('text', x=72, y=0.75, label='10% Threshold\nMethod', size=4.5) + 
-  annotate('text', x=102, y=0.75, label='Curvature\nMethod', size=4.5) + 
+  annotate('text', x=85, y=0.83, label='95% Confidence Interval\nfor Start of Season', size=6, fontface='bold') + 
+  annotate('text', x=72, y=0.75, label='10% Threshold\nMethod', size=5) + 
+  annotate('text', x=102, y=0.75, label='Curvature\nMethod', size=5) + 
   coord_cartesian(xlim=c(0,150), ylim=c(0.15, 0.85)) +
   scale_x_continuous(breaks = c(1,50,100,150)) + 
   theme_bw() + 
   theme(legend.position = 'none',
-        axis.text = element_text(color='black', size=14),
-        axis.title = element_text(size=16)) + 
+        axis.text = element_text(color='black', size=22),
+        axis.title = element_text(size=24)) + 
   labs(y='Vegetation Index', x='Day of Year')
 
+ggsave('manuscript/fig8_sos_uncertainty.png', fig8_sos_uncertainty, width=20, height=18, units='cm', dpi=200)
