@@ -9,10 +9,10 @@ source('./simulation_analysis/vi_simulation_tools.R')
 #------------------------------------
 
 doy_full = tibble(doy = c(1:365))
-doy_8_day = tibble(doy = seq(-60,450,8))
+doy_8_day = tibble(doy = seq(-100,500,8))
 
 soil_vi = 0.2
-error_sd = 0.04
+error_sd = 0.01
 
 iterations = 100
 
@@ -61,17 +61,16 @@ for(a in amplitude_rates){
 }
 
 summarized_phenology = estimated_phenology %>%
-  group_by(amplitude) %>%
-  summarise(sos_mean = mean(sos),
+  #filter(method=='max_change_rate') %>%
+  group_by(amplitude, method) %>%
+  summarise(sos_mean = median(sos),
             sos_sd   = sd(sos)) %>%
   ungroup() %>%
   mutate(error_bar_y = case_when(
-    amplitude == 0.488 ~ 0.57,
-    amplitude == 0.35  ~ 0.54,
-    amplitude == 0.22  ~ 0.51
-  ))
-  
-
+    amplitude == 0.488 ~ 0.70,
+    amplitude == 0.35  ~ 0.67,
+    amplitude == 0.22  ~ 0.63
+  )) 
 
 amplitude_colors = c('#000000','#0072b2','#e69f00')
 
@@ -81,11 +80,12 @@ estimated_curves %>%
             vi_sd   = sd(smoothed_vi)) %>%
   ungroup() %>%
   ggplot(aes(x=doy, y=vi_mean, color=as.factor(amplitude))) + 
-  geom_ribbon(aes(ymin = vi_mean-vi_sd*1.97,
-                  ymax = vi_mean+vi_sd*1.97,
+  annotate('rect', xmin = 56, xmax = 115, ymin = 0.61, ymax=0.87, size=0.5, linetype='dotted', color='black', fill='white', alpha=0.5) + 
+  geom_ribbon(aes(ymin = vi_mean-vi_sd*1.96,
+                  ymax = vi_mean+vi_sd*1.96,
                   fill = as.factor(amplitude)),
                   alpha=0.4, size=0) + 
-  geom_line(size=2) +
+  geom_line(size=1) +
   geom_errorbarh(data=summarized_phenology,
                  aes(y=error_bar_y, x=0,
                      xmin = sos_mean - sos_sd*1.96, 
@@ -96,9 +96,10 @@ estimated_curves %>%
              size=3) + 
   scale_color_manual(values=amplitude_colors) + 
   scale_fill_manual(values=amplitude_colors) + 
-  annotate('text', x=55, y=0.625, label='95% Confidence Interval\nfor Start of Season', size=5) + 
-  annotate('rect', xmin = 15, xmax = 95, ymin = 0.49, ymax=0.66, size=0.5, linetype='dotted', color='black', fill='transparent') + 
-  coord_cartesian(xlim=c(0,150)) +
+  annotate('text', x=85, y=0.83, label='95% Confidence Interval\nfor Start of Season', size=5, fontface='bold') + 
+  annotate('text', x=72, y=0.75, label='10% Threshold\nMethod', size=4.5) + 
+  annotate('text', x=102, y=0.75, label='Curvature\nMethod', size=4.5) + 
+  coord_cartesian(xlim=c(0,150), ylim=c(0.15, 0.85)) +
   scale_x_continuous(breaks = c(1,50,100,150)) + 
   theme_bw() + 
   theme(legend.position = 'none',
