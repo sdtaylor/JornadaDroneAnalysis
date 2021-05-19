@@ -91,7 +91,7 @@ all_phenology2 = all_phenology %>%
 fig4_drone_detectability = all_phenology2 %>%
   filter(threshold %in% c(0.1)) %>%
   filter(pixel_size %in% c(2,4,8,16)) %>%
-  mutate(meets_threshold = qa==0) %>%
+  mutate(meets_threshold = qa_amplitude ==0) %>%
   #mutate(cover_bin = ceiling(cover*10*2)/2/10) %>% # round to the nearest 0.05
   mutate(mesquite_cover_bin = round(mesquite,2)) %>%
   group_by(site_id,pixel_size,mesquite_cover_bin) %>%
@@ -128,7 +128,7 @@ true_phenology = tribble(
   pivot_longer(c(-threshold,-method), names_to='metric', values_to='true_doy')
 
 method_levels = c('percent_max_threshold','max_change_rate')
-method_labels = c('10% of relative max','Maximum rate of change')
+method_labels = c('10% Threshold Method','Curvature Method')
 
 fig5_drone_mae = all_phenology2 %>%
   filter(threshold %in% c(0.1, NA)) %>%
@@ -145,7 +145,7 @@ fig5_drone_mae = all_phenology2 %>%
   mutate(metric = factor(metric, levels=c('sos','peak','eos'), labels=c('SOS','Peak','EOS'), ordered = T)) %>%
   mutate(method = factor(method, levels = method_levels, labels=method_labels)) %>%
   ggplot(aes(x=mesquite_cover_bin, y=mae, color=as.factor(pixel_size))) + 
-  geom_line(size=2) +
+  geom_line(size=1) +
   scale_color_manual(values = c('#000000','#e69f00','#56b4e9','#d55e00')) + 
   scale_y_continuous(breaks=seq(0,100,20)) + 
   scale_x_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
