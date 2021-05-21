@@ -75,7 +75,7 @@ true_phenology_metrics = vi_simulation_results %>%
   select(method, threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
 
 method_levels = c('percent_max_threshold','max_change_rate')
-method_labels = c('10% of relative max','Maximum rate of change')
+method_labels = c('10% Threshold Method','Curvature Method')
 
 fig3_sim_mae = vi_simulation_results %>%
   filter(eos > peak) %>%
