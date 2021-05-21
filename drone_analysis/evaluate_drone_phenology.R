@@ -89,10 +89,10 @@ all_phenology2 = all_phenology %>%
   left_join(roi_cover, by='roi_id')
 
 fig4_drone_detectability = all_phenology2 %>%
+  filter(method == 'percent_max_threshold') %>%
   filter(threshold %in% c(0.1)) %>%
   filter(pixel_size %in% c(2,4,8,16)) %>%
   mutate(meets_threshold = qa_amplitude ==0) %>%
-  #mutate(cover_bin = ceiling(cover*10*2)/2/10) %>% # round to the nearest 0.05
   mutate(mesquite_cover_bin = round(mesquite,2)) %>%
   group_by(site_id,pixel_size,mesquite_cover_bin) %>%
   summarise(percent_meeting_threshold = mean(meets_threshold), n=n()) %>%
