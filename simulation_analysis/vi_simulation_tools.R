@@ -23,7 +23,11 @@ extract_phenology = function(df,
                              amplitude_threshold = 0.1,
                              to_return = 'df'){
   # print(head(df,1))
-  qa = 0
+  qa_amplitude = 0
+  qa_maxchangerate1_sos = 0
+  qa_maxchangerate2_sos = 0
+  qa_maxchangerate1_eos = 0
+  qa_maxchangerate2_eos = 0
   df = arrange(df, doy)
   full_year = data.frame(doy = -90:455)
   #smoothed_points = predict(loess(vi ~ doy, span=loess_span, data=df), newdata = full_year)
@@ -32,7 +36,7 @@ extract_phenology = function(df,
   
   meets_amplitude_threshold = max(smoothed_points) - min(smoothed_points) >= amplitude_threshold
   if(!meets_amplitude_threshold){
-    qa = qa + 1
+    qa_amplitude = 1
   } 
   
   scaled_vi = (smoothed_points - min(smoothed_points)) / (max(smoothed_points) - min(smoothed_points))
@@ -49,12 +53,12 @@ extract_phenology = function(df,
     
     season_length = eos - sos
     
-    phenology_df = rbind(phenology_df,
-                      data.frame(peak = peak, sos = sos, 
-                                 eos = eos, season_length = season_length,
-                                 threshold = threshold,
-                                 method = 'percent_max_threshold',
-                                 qa = qa))
+    phenology_df = bind_rows(phenology_df,
+                      tibble(peak = peak, sos = sos, 
+                             eos = eos, season_length = season_length,
+                             threshold = threshold,
+                             method = 'percent_max_threshold',
+                             qa_amplitude = qa_amplitude))
     
   }
   
@@ -72,15 +76,19 @@ extract_phenology = function(df,
   # use the bounds as estimates to maximize the error.
   if(length(sos)==0) {
     print('sos estimate failed')
+    qa_maxchangerate1_sos = 1
     sos = min(full_year$doy)
   } else if(length(sos)>1){
     print('>1 sos estimate')
+    qa_maxchangerate2_sos = 1
     sos = min(full_year$doy)
   }
   if(length(eos)==0) {
     print('eos estimate failed')
+    qa_maxchangerate1_eos = 1
     eos = max(full_year$doy)
   } else if(length(eos)>1){
+    qa_maxchangerate2_eos = 1
     print('>1 eos estimate')
     eos = max(full_year$doy)
   }
@@ -88,12 +96,16 @@ extract_phenology = function(df,
   #eos = full_year$doy[which.min(first_derivative)]
   season_length = eos - sos
   
-  phenology_df = rbind(phenology_df,
-                       data.frame(peak = peak, sos = sos, 
-                                  eos = eos, season_length = season_length,
-                                  threshold = NA,
-                                  method = 'max_change_rate',
-                                  qa = qa))
+  phenology_df = bind_rows(phenology_df,
+                       tibble(peak = peak, sos = sos, 
+                              eos = eos, season_length = season_length,
+                              threshold = NA,
+                              method = 'max_change_rate',
+                              qa_amplitude = qa_amplitude,
+                              qa_maxchangerate1_sos = qa_maxchangerate1_sos,
+                              qa_maxchangerate2_sos = qa_maxchangerate2_sos, 
+                              qa_maxchangerate1_eos = qa_maxchangerate1_eos, 
+                              qa_maxchangerate2_eos = qa_maxchangerate2_eos))
   
   if(to_return == 'plot'){
     # return a diagnostic plot with all original points, the smooth line, and resulting phenology
