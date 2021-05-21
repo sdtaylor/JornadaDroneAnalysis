@@ -23,7 +23,7 @@ amplitude_colors = viridisLite::viridis(4, end = 0.8)
 percent_meeting_amplitude_data = vi_simulation_results %>%
   filter(method == 'percent_max_threshold') %>%
   group_by(threshold, plant_cover, amplitude, error) %>%
-  summarise(percent_meeting_amplitude = 1 - mean(qa),
+  summarise(percent_meeting_amplitude = 1 - mean(qa_amplitude),
             n=n()) %>%
   ungroup() %>%
   filter(threshold %in% c(0.25)) %>% 
