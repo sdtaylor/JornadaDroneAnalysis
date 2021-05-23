@@ -75,21 +75,21 @@ extract_phenology = function(df,
   # if this failed due to poor fit of the smoothing line
   # use the bounds as estimates to maximize the error.
   if(length(sos)==0) {
-    print('sos estimate failed')
+    #print('sos estimate failed')
     qa_maxchangerate1_sos = 1
     sos = min(full_year$doy)
   } else if(length(sos)>1){
-    print('>1 sos estimate')
+    #print('>1 sos estimate')
     qa_maxchangerate2_sos = 1
     sos = min(full_year$doy)
   }
   if(length(eos)==0) {
-    print('eos estimate failed')
+    #print('eos estimate failed')
     qa_maxchangerate1_eos = 1
     eos = max(full_year$doy)
   } else if(length(eos)>1){
     qa_maxchangerate2_eos = 1
-    print('>1 eos estimate')
+    #print('>1 eos estimate')
     eos = max(full_year$doy)
   }
   #sos = full_year$doy[which.max(first_derivative)]
