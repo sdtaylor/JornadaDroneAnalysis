@@ -75,7 +75,7 @@ true_phenology_metrics = vi_simulation_results %>%
   select(method, threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
 
 method_levels = c('percent_max_threshold','max_change_rate')
-method_labels = c('10% Threshold Method','Curvature Method')
+method_labels = c('10% Threshold Method','Change Rate Method')
 
 fig3_sim_mae = vi_simulation_results %>%
   filter(eos > peak) %>%
@@ -94,7 +94,7 @@ fig3_sim_mae = vi_simulation_results %>%
   filter(error %in% c(0.01,0.04)) %>%
   filter(round(amplitude,2) %in% c(0.1,0.2,0.8)) %>% 
   pivot_longer(c(SOS, EOS, Peak), names_to='metric', values_to='metric_values') %>% 
-  mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'), ordered = T)) %>% 
+  mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'),labels=c('SOS','POS','EOS'), ordered = T)) %>% 
   mutate(method = factor(method, levels = method_levels, labels=method_labels)) %>%
   ggplot(aes(x=plant_cover, y = metric_values, color=as.factor(amplitude))) +
   geom_line(aes(linetype=as.factor(error)), size=1.25) +
