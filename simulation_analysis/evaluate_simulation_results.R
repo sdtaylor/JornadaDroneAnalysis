@@ -34,6 +34,8 @@ percent_meeting_amplitude_data = vi_simulation_results %>%
 
 fig2_sim_detectability = ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
   geom_line(aes(linetype=as.factor(error)),size=2) +
+  geom_segment(x=0.2,y=1,xend=1,yend=1, size=1.9, color=amplitude_colors[4]) + # These 2 segments are just to have a smooth line at the top and bottom
+  geom_segment(x=0,y=0,xend=0.6,yend=0, size=1.9, color=amplitude_colors[1]) + # instead of a very broken/inconsistent one from the multiple dashed lines.
   geom_label(data=percent_meeting_amplitude_labels, label='                    ',color='black', label.size=0.5, size=6) + 
   geom_text(data=percent_meeting_amplitude_labels, aes(label=amplitude_label), parse=T, size=6) + 
   scale_x_continuous(breaks=seq(0,1,0.2),  labels = function(x){paste0(x*100,'%')}) + 
