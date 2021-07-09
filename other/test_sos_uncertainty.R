@@ -80,7 +80,9 @@ fig8_sos_uncertainty = estimated_curves %>%
             vi_sd   = sd(smoothed_vi)) %>%
   ungroup() %>%
   ggplot(aes(x=doy, y=vi_mean, color=as.factor(amplitude))) + 
-  annotate('rect', xmin = 50, xmax = 120, ymin = 0.61, ymax=0.87, size=0.5, linetype='dotted', color='black', fill='white', alpha=0.5) + 
+  annotate('rect', xmin = 48, xmax = 124, ymin = 0.61, ymax=0.87, size=0.5, linetype='solid', color='black', fill='white', alpha=0) + 
+  annotate('rect', xmin = 50, xmax = 90, ymin = 0.62, ymax=0.785, size=0.5, linetype='dotted', color='black', fill='white', alpha=0) + 
+  annotate('rect', xmin = 91, xmax = 122, ymin = 0.62, ymax=0.785, size=0.5, linetype='dotted', color='black', fill='white', alpha=0) + 
   geom_ribbon(aes(ymin = vi_mean-vi_sd*1.96,
                   ymax = vi_mean+vi_sd*1.96,
                   fill = as.factor(amplitude)),
@@ -96,9 +98,9 @@ fig8_sos_uncertainty = estimated_curves %>%
              size=3) + 
   scale_color_manual(values=amplitude_colors) + 
   scale_fill_manual(values=amplitude_colors) + 
-  annotate('text', x=85, y=0.83, label='95% Confidence Interval\nfor Start of Season', size=6, fontface='bold') + 
-  annotate('text', x=72, y=0.75, label='10% Threshold\nMethod', size=5) + 
-  annotate('text', x=102, y=0.75, label='Curvature\nMethod', size=5) + 
+  annotate('label', x=85, y=0.83, label='95% Confidence Interval\nfor Start of Season', size=6, fontface='bold', fill='white', label.size=0) + 
+  annotate('label', x=70, y=0.75, label='10% Threshold\nMethod', size=5, fill='white', label.size=0) + 
+  annotate('label', x=106.5, y=0.75, label='Change Rate\nMethod', size=5, fill='white', label.size=0) + 
   coord_cartesian(xlim=c(0,150), ylim=c(0.15, 0.85)) +
   scale_x_continuous(breaks = c(1,50,100,150)) + 
   theme_bw() + 
