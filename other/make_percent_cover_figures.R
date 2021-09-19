@@ -16,21 +16,22 @@ ecoregions = st_read('./other/data/us_eco_l3_state_boundaries/us_eco_l3_state_bo
   st_buffer(0.01)
 
 # only north american deserts shapefile for use in qgis
-st_write(ecoregions, './other/data/NA_Desert_ecoregions.geojson')
+#st_write(ecoregions, './other/data/NA_Desert_ecoregions.geojson')
 
 # Create some cropped rasters for use in QGIS
-mean_cover_raster = read_stars('./other/data/rap_cover/RAP_average_cover_2000-2019.tif')
-std_cover_raster  = read_stars('./other/data/rap_cover/RAP_std_cover_2000-2019.tif')
+mean_cover_raster = read_stars('./other/data/rap_cover/RAP_average_cover_2000-2019_cropped.tif')
+std_cover_raster  = read_stars('./other/data/rap_cover/RAP_std_cover_2000-2019_cropped.tif')
 
 ecoregions = st_transform(ecoregions, crs=st_crs(mean_cover_raster))
 
-mean_cover_raster = st_crop(mean_cover_raster, ecoregions)
-std_cover_raster = st_crop(std_cover_raster, ecoregions)
+# if cropped ones are needed.
+#mean_cover_raster = st_crop(mean_cover_raster, ecoregions)
+#std_cover_raster = st_crop(std_cover_raster, ecoregions)
+#
+#write_stars(mean_cover_raster,'./other/data/rap_cover/RAP_average_cover_2000-2019_cropped.tif')
+#write_stars(std_cover_raster, './other/data/rap_cover/RAP_std_cover_2000-2019_cropped.tif')
 
-write_stars(mean_cover_raster,'./other/data/rap_cover/RAP_average_cover_2000-2019_cropped.tif')
-write_stars(std_cover_raster, './other/data/rap_cover/RAP_std_cover_2000-2019_cropped.tif')
-
-
+font_family = 'serif'
 
 for(this_ecoregion in unique(as.character(ecoregions$NA_L3NAME))){
   e = ecoregions %>%
@@ -51,30 +52,30 @@ for(this_ecoregion in unique(as.character(ecoregions$NA_L3NAME))){
     theme_bw() +
     theme(axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
-          axis.text.x = element_text(color='black',size=12),
-          axis.title  = element_text(size=18),
-          plot.title = element_text(size=21)) +
-    labs(x='Fractional Cover',y='Density', title=this_ecoregion)
+          axis.text.x = element_text(color='black',size=12, family = font_family),
+          axis.title  = element_text(size=18, family = font_family),
+          plot.title = element_text(size=21, hjust=0.5, family = font_family)) +
+    labs(x='Fractional cover',y='Density', title=this_ecoregion)
 
-  ggsave(paste0('./manuscript/map_figure/',this_ecoregion,'_mean_cover.png'), mean_cover_fig, width=10, height=8, units='cm')
+  ggsave(paste0('./manuscript/map_figure/',this_ecoregion,'_mean_cover.svg'), mean_cover_fig, width=10, height=8, units='cm')
   
   #---------------
   std_cover = st_extract(std_cover_raster, random_points) %>%
     st_set_geometry(NULL)
   colnames(std_cover) <- 'value'
 
-  mean_cover_fig = ggplot(std_cover, aes(value)) +
+  std_cover_fig = ggplot(std_cover, aes(value)) +
     geom_density(size=3, color='#d55e00') +
     scale_x_continuous(breaks=c(0,5,10,15,20,25,30), limits=c(0,30)) +
     theme_bw() +
     theme(axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
-          axis.text.x = element_text(color='black',size=12),
-          axis.title.y  = element_text(size=18),
-          axis.title.x  = element_text(size=14),
-          plot.title = element_text(size=21)) +
-    labs(x='Annual Variation in Fractional Cover',y='Density', title=this_ecoregion)
+          axis.text.x = element_text(color='black',size=12, family = font_family),
+          axis.title.y  = element_text(size=18, family = font_family),
+          axis.title.x  = element_text(size=14, family = font_family),
+          plot.title = element_text(size=21,hjust=0.5, family = font_family)) +
+    labs(x='Annual variation in fractional cover',y='Density', title=this_ecoregion)
 
-  ggsave(paste0('./manuscript/map_figure/',this_ecoregion,'_std_cover.png'), mean_cover_fig, width=10, height=8, units='cm')
+  ggsave(paste0('./manuscript/map_figure/',this_ecoregion,'_std_cover.svg'), std_cover_fig, width=10, height=8, units='cm')
   
 }

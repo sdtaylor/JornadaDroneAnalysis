@@ -88,6 +88,8 @@ all_phenology2 = all_phenology %>%
   #left_join(pixel_sizes, by='roi_id') %>%
   left_join(roi_cover, by='roi_id')
 
+font_family = 'serif'
+
 fig4_drone_detectability = all_phenology2 %>%
   filter(method == 'percent_max_threshold') %>%
   filter(threshold %in% c(0.1)) %>%
@@ -104,19 +106,25 @@ ggplot(aes(x=mesquite_cover_bin, y=percent_meeting_threshold, color=as.factor(pi
   scale_x_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
   scale_y_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
   theme_bw() +
-  theme(legend.position = c(0.8,0.5),
-        legend.background = element_rect(color='black'),
+  theme(legend.position = 'bottom',
+        legend.background = element_blank(),
         legend.key.width = unit(20,'mm'),
-        legend.title = element_text(size=18),
-        legend.text = element_text(size=15),
-        axis.text = element_text(color='black', size=15),
-        axis.title = element_text(size=18)) + 
-  labs(x='Mesquite Fractional Cover', 
-       y='Percent of Drone Pixels with\nannual NDVI amplitude > 0.1',
-       color = 'Pixel Size (m)') +
-  guides(color = guide_legend(reverse=T, override.aes = list(size=3)))
+        legend.title = element_text(size=18, family = font_family),
+        legend.text = element_text(size=15, family = font_family),
+        panel.border = element_rect(size=1, color='black'),
+        panel.grid.minor = element_line(color='grey70', size=0.2),
+        panel.grid.major = element_line(color='grey70', size=0.2),
+        axis.text = element_text(color='black', size=15, family = font_family),
+        axis.title = element_text(size=18, family = font_family)) + 
+  labs(x='Mesquite fractional cover', 
+       y='Percent of drone pixels with\nannual NDVI amplitude > 0.1',
+       color = 'Pixel size (m)') +
+  guides(color = guide_legend(reverse=T, 
+                              title.position = 'top',
+                              ncol=2,
+                              override.aes = list(size=1.2)))
 
-ggsave('./manuscript/fig4_drone_detectability.png', fig4_drone_detectability, width=16, height=14, units = 'cm', dpi=200)
+ggsave('./manuscript/figures/fig4_drone_detectability.pdf', fig4_drone_detectability, width=16, height=16, units = 'cm', dpi=200)
 
 #----------------------------------
 # mean average error (MAE) of estimates. from calculate_NORT_observed_phenology.R
@@ -145,30 +153,34 @@ fig5_drone_mae = all_phenology2 %>%
   mutate(metric = factor(metric, levels=c('sos','peak','eos'), labels=c('SOS','POS','EOS'), ordered = T)) %>%
   mutate(method = factor(method, levels = method_levels, labels=method_labels)) %>%
   ggplot(aes(x=mesquite_cover_bin, y=mae, color=as.factor(pixel_size))) + 
-  geom_line(size=1) +
+  geom_line(size=0.8) +
   scale_color_manual(values = c('#000000','#e69f00','#56b4e9','#d55e00')) + 
   scale_y_continuous(breaks=seq(0,100,20)) + 
   scale_x_continuous(breaks=seq(0,1,0.2), labels = function(x){paste0(x*100,'%')}) +
   coord_cartesian(ylim=c(0,100))  +
   facet_grid(metric~method) + 
   theme_bw() + 
-  theme(legend.position = c(0.35,0.22),
-        legend.background = element_rect(color='black'),
+  theme(legend.position = 'bottom',
+        legend.background =element_blank(),
         legend.key.width = unit(20,'mm'),
-        legend.title = element_text(size=18),
-        legend.text = element_text(size=15),
-        #panel.grid.major = element_line(color='grey50', size=0.4),
-        #panel.grid.minor = element_blank(),
+        legend.title = element_text(size=18, family = font_family),
+        legend.text = element_text(size=15, family = font_family),
+        panel.border = element_rect(size=1, color='black'),
+        panel.grid.major = element_line(color='grey70', size=0.2),
+        panel.grid.minor =  element_line(color='grey70', size=0.2),
         strip.background = element_blank(),
-        strip.text.x = element_text(size=16),
-        strip.text.y = element_text(size=18,face='bold'),
-        axis.text = element_text(color='black', size=15),
-        axis.text.x = element_text(size=14),
-        axis.title = element_text(size=18)) +
-  labs(x='Mesquite Fractional Cover', y='Mean Absolute Error of Estimates', color='Pixel Size (m)') +
-  guides(color = guide_legend(reverse=T, override.aes = list(size=3)))
+        strip.text.x = element_text(size=16, family = font_family),
+        strip.text.y = element_text(size=18, family = font_family),
+        axis.text = element_text(color='black', size=15, family = font_family),
+        axis.text.x = element_text(size=14, family = font_family),
+        axis.title = element_text(size=18, family = font_family, vjust = 0)) +
+  labs(x='Mesquite fractional cover', y='Mean absolute error of estimates', color='Pixel size (m)') +
+  guides(color = guide_legend(reverse=T, 
+                              title.position = 'top',
+                              ncol=2,
+                              override.aes = list(size=1.2)))
 
-ggsave('./manuscript/fig5_drone_mae.png', fig5_drone_mae, width=22, height=24, units = 'cm', dpi=200)
+ggsave('./manuscript/figures/fig5_drone_mae.pdf', fig5_drone_mae, width=22, height=26, units = 'cm', dpi=200)
 
 #----------------------------------
 # Supplemental Figure showing examples of different UAV  pixl annual curves.
@@ -221,5 +233,5 @@ ggplot(aes(x=doy, y=vi, color=as.factor(mesquite_cover), group=roi_id)) +
   labs(x='Day of Year', y='NDVI', color='Mesquite Fractional\nCover') +
   guides(color=guide_legend(reverse = T, override.aes = list(size=4)))
 
-ggsave('./manuscript/figS3_drone_ndvi_example.png', figS3_drone_ndvi_example, width=28, height=20, units = 'cm', dpi=200)
+ggsave('./manuscript/figures/figS3_drone_ndvi_example.pdf', figS3_drone_ndvi_example, width=28, height=20, units = 'cm', dpi=200)
 
