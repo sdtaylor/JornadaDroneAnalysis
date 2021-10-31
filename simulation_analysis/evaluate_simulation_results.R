@@ -1,6 +1,7 @@
 library(tidyverse)
 
-vi_simulation_results = read_csv('./simulation_analysis/data/vi_simulation_results.csv')
+vi_simulation_results = read.csv('./simulation_analysis/data/vi_simulation_results.csv') %>%
+  as_tibble()
 
 
 #-----------------------------------
@@ -31,32 +32,36 @@ percent_meeting_amplitude_data = vi_simulation_results %>%
   mutate(amplitude = round(amplitude,2)) %>%
   filter(amplitude %in% c(0.1, 0.2, 0.4, 0.8))
 
+font_family = 'serif'
 
 fig2_sim_detectability = ggplot(percent_meeting_amplitude_data, aes(x=plant_cover, y = percent_meeting_amplitude, color=as.factor(amplitude))) +
-  geom_line(aes(linetype=as.factor(error)),size=2) +
-  geom_segment(x=0.2,y=1,xend=1,yend=1, size=1.9, color=amplitude_colors[4]) + # These 2 segments are just to have a smooth line at the top and bottom
-  geom_segment(x=0,y=0,xend=0.6,yend=0, size=1.9, color=amplitude_colors[1]) + # instead of a very broken/inconsistent one from the multiple dashed lines.
-  geom_label(data=percent_meeting_amplitude_labels, label='                    ',color='black', label.size=0.5, size=6) + 
-  geom_text(data=percent_meeting_amplitude_labels, aes(label=amplitude_label), parse=T, size=6) + 
+  geom_line(aes(linetype=as.factor(error)),size=1.25) +
+  geom_segment(x=0.2,y=1,xend=1,yend=1, size=1.2, color=amplitude_colors[4]) + # These 2 segments are just to have a smooth line at the top and bottom
+  geom_segment(x=0,y=0,xend=0.6,yend=0, size=1.2, color=amplitude_colors[1]) + # instead of a very broken/inconsistent one from the multiple dashed lines.
+  geom_label(data=percent_meeting_amplitude_labels, label='                    ',color='black', label.size=0.4, size=7) + 
+  geom_text(data=percent_meeting_amplitude_labels, aes(label=amplitude_label, y=percent_meeting_amplitude-0.004), parse=T, size=6, fontface='italic', family=font_family) + 
   scale_x_continuous(breaks=seq(0,1,0.2),  labels = function(x){paste0(x*100,'%')}) + 
   scale_color_manual(values = amplitude_colors) + 
   theme_bw() +
   theme(legend.position = 'bottom',
-        legend.background = element_rect(color='black'),
-        panel.grid.major = element_line(color='grey70', size=0.7),
-        panel.grid.minor = element_line(color='grey90', size=0.8),
-        axis.text = element_text(color='black', size=14),
-        axis.title = element_text(size=16),
+        legend.background = element_blank(),
+        panel.border = element_rect(size=1, color='black'),
+        panel.grid.major = element_line(color='grey70', size=0.5),
+        panel.grid.minor = element_line(color='grey70', size=0.5),
+        axis.text = element_text(color='black', size=14, family=font_family),
+        axis.title = element_text(size=16, family=font_family),
         strip.background = element_blank()) +
   guides(color=guide_none(),
-         linetype = guide_legend(keywidth=unit(40,'mm'), 
-                                 label.position = 'top',
-                                 title.theme = element_text(size=14),
-                                 label.theme = element_text(size=12))) + 
-  labs(x='Fractional Vegetation Cover',y=bquote(atop('Proportion of simulations where',VI[pixel]~' amplitude > 0.1')),
+         linetype = guide_legend(keywidth=unit(25,'mm'),
+                                 title.hjust = 0.4,
+                                 label.position = 'right',
+                                 direction = 'vertical',
+                                 title.theme = element_text(size=14, family=font_family),
+                                 label.theme = element_text(size=12, family=font_family))) + 
+  labs(x='Fractional vegetation cover',y=bquote(atop('Proportion of simulations where',VI[pixel]~' amplitude > 0.1')),
        linetype='Uncertainty (S.D.)')
 
-ggsave('./manuscript/fig2_sim_detectability.png', fig2_sim_detectability, width=18, height=16, units = 'cm', dpi=200)
+ggsave('./manuscript/figures/fig2_sim_detectability.pdf', fig2_sim_detectability, width=18, height=18, units = 'cm', dpi=200)
 
 
 #-----------------------------------
@@ -77,7 +82,7 @@ true_phenology_metrics = vi_simulation_results %>%
   select(method, threshold, amplitude, sos_true = sos, eos_true = eos, peak_true = peak)
 
 method_levels = c('percent_max_threshold','max_change_rate')
-method_labels = c('10% Threshold Method','Change Rate Method')
+method_labels = c('10% Threshold method','Change rate method')
 
 fig3_sim_mae = vi_simulation_results %>%
   filter(eos > peak) %>%
@@ -99,7 +104,7 @@ fig3_sim_mae = vi_simulation_results %>%
   mutate(metric = factor (metric, levels=c('SOS','Peak','EOS'),labels=c('SOS','POS','EOS'), ordered = T)) %>% 
   mutate(method = factor(method, levels = method_levels, labels=method_labels)) %>%
   ggplot(aes(x=plant_cover, y = metric_values, color=as.factor(amplitude))) +
-  geom_line(aes(linetype=as.factor(error)), size=1.25) +
+  geom_line(aes(linetype=as.factor(error)), size=1) +
   scale_color_manual(values = amplitude_colors[c(1,2,4)], labels=c('0.1','0.2','0.8')) + # 0.4 is dropped here for clarity
   scale_y_continuous(breaks = seq(0,160,20), expand=expansion(mult=0.02)) + 
   scale_x_continuous(breaks=seq(0,1,0.2), expand=expansion(mult=0.05), labels = function(x){paste0(x*100,'%')}) +
@@ -109,27 +114,33 @@ fig3_sim_mae = vi_simulation_results %>%
   theme_bw(15) +
   theme(legend.position = 'bottom',
         legend.box = 'horizontal',
-        legend.background = element_rect(color='black'),
-        legend.text = element_text(size=13),
-        legend.title = element_text(size=16),
-        panel.grid.major = element_line(color='grey50', size=0.4),
-        panel.grid.minor = element_line(color='grey90', size=0.5),
-        axis.text = element_text(color='black'),
-        strip.text = element_text( size=16),
-        strip.text.y = element_text(face='bold'),
+        legend.background = element_blank(),
+        legend.text = element_text(size=13,  family=font_family),
+        legend.title = element_text(size=16,  family=font_family),
+        panel.border = element_rect(size=1, color='black'),
+        panel.grid.major = element_line(color='grey70', size=0.2),
+        panel.grid.minor = element_line(color='grey70', size=0.2),
+        axis.text = element_text(color='black',  family=font_family),
+        axis.title = element_text(color='black', family=font_family),
+        strip.text = element_text( size=16,  family=font_family),
+        strip.text.y = element_text(face='plain',  family=font_family),
         strip.background = element_blank()) +
-  labs(x='Fractional Vegetation Cover' ,y='Mean Absolute Error (MAE) of Estimates',
+  labs(x='Fractional vegetation cover' ,y='Mean absolute error (MAE) of estimates',
        linetype='Uncertainty (S.D.)',
-       color=bquote(VI[veg]~'Amplitude')) +
-  guides(color=guide_legend(override.aes = list(size=3), 
+       color=bquote(VI[veg]~'amplitude')) +
+  guides(color=guide_legend(override.aes = list(size=1.2), 
                             direction = 'vertical',
-                            keywidth = unit(15,'mm')),
-         linetype =  guide_legend(keywidth=unit(60,'mm'),
+                            keywidth = unit(15,'mm'),
+                            label.theme = element_text(size = 12, family=font_family),
+                            title.theme = element_text(size=14, family=font_family)
+                            ),
+         linetype =  guide_legend(keywidth=unit(30,'mm'),
+                                  override.aes = list(size=1.2),
                                   #eyheight = unit(10,'mm'),
-                                  #direction = 'vertical',
+                                  direction = 'vertical',
                                   label.position = 'top',
                                   title.position = 'top',
-                                  title.theme = element_text(size=14, hjust=0.5),
-                                  label.theme = element_text(size=12)))
+                                  title.theme = element_text(size=14, hjust=-1,  family=font_family),
+                                  label.theme = element_text(size=12,  family=font_family)))
 
-ggsave('./manuscript/fig3_sim_mae.png', fig3_sim_mae, width=20, height=24, units = 'cm', dpi=200)
+ggsave('./manuscript/figures/fig3_sim_mae.pdf', fig3_sim_mae, width=20, height=24, units = 'cm', dpi=200)
